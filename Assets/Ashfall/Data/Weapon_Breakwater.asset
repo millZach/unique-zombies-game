@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bcaa28a465b6237ba96c9d5724846b, type: 3}
+  m_Name: Weapon_Breakwater
+  m_EditorClassIdentifier: Ashfall.Runtime::Ashfall.Weapons.WeaponDefinition
+  displayName: Breakwater
+  flavourLine: Deck gun for clearing ice. Clears other things too.
+  salvageCost: 1250
+  fireMode: 0
+  roundsPerMinute: 78
+  pelletsPerShot: 9
+  burstCount: 3
+  burstSpacing: 0.06
+  ammoPerShot: 1
+  damagePerPellet: 21
+  criticalMultiplier: 1.7
+  falloffStart: 6.5
+  falloffEnd: 19
+  falloffFloor: 0.18
+  maxRange: 45
+  impactForce: 16
+  baseSpreadDegrees: 5.2
+  maxSpreadDegrees: 8.5
+  spreadPerShot: 1.1
+  spreadRecoveryPerSecond: 5
+  aimSpreadScale: 0.62
+  movementSpreadScale: 1.35
+  recoilVertical: 3.4
+  recoilHorizontal: 0.9
+  recoilRecoveryPerSecond: 6
+  kickBack: 0.11
+  magazineSize: 6
+  reserveAmmo: 48
+  maxReserveAmmo: 84
+  reloadSeconds: 0.42
+  incrementalReload: 1
+  shellsPerReloadStep: 1
+  aimMoveSpeedScale: 0.62
+  aimFovScale: 0.92
+  aimTransitionSeconds: 0.14
+  equipSeconds: 0.55
+  accentColor: {r: 0.31, g: 0.161, b: 0.09, a: 1}
+  tracerColor: {r: 1, g: 0.62, b: 0.3, a: 1}
+  muzzleFlashScale: 1.7
+  cameraShakeAmount: 0.95
+  lowFrequencyRumble: 0.75
+  highFrequencyRumble: 0.55
+  rumbleSeconds: 0.16
+  fireVolume: 0.75
+  firePitch: 0.82

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 010cdfd929201aedcb0c830ab1a5e28a, type: 3}
+  m_Name: Enemy_StormBrute
+  m_EditorClassIdentifier: Ashfall.Runtime::Ashfall.Enemies.EnemyDefinition
+  displayName: Storm Brute
+  archetype: 2
+  baseHealth: 1250
+  criticalMultiplier: 1.8
+  baseMoveSpeed: 2.55
+  accelerationVariance: 0.12
+  bodyRadius: 0.78
+  bodyHeight: 2.85
+  attackDamage: 58
+  attackRange: 2.9
+  attackInterval: 1.85
+  attackWindupSeconds: 0.62
+  attackLungeSpeed: 0
+  knockbackForce: 9.5
+  barricadeDamagePerHit: 400
+  barricadeAttackInterval: 0.7
+  staggerThreshold: 260
+  staggerSeconds: 0.34
+  staggerResistance: 0.65
+  salvageValue: 520
+  powerUpDropChance: 1
+  bodyColor: {r: 0.184, g: 0.169, b: 0.176, a: 1}
+  corruptionColor: {r: 0.239, g: 0.878, b: 0.855, a: 1}
+  corruptionEmission: 3.4
+  visualScale: 1.55
+  gaitBobAmplitude: 0.14
+  gaitBobFrequency: 3.1
+  leanDegrees: 6

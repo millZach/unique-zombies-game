@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bcaa28a465b6237ba96c9d5724846b, type: 3}
+  m_Name: Weapon_Arc9
+  m_EditorClassIdentifier: Ashfall.Runtime::Ashfall.Weapons.WeaponDefinition
+  displayName: Arc-9
+  flavourLine: Prototype rail carbine. The storm charges it for free.
+  salvageCost: 1900
+  fireMode: 1
+  roundsPerMinute: 690
+  pelletsPerShot: 1
+  burstCount: 3
+  burstSpacing: 0.06
+  ammoPerShot: 1
+  damagePerPellet: 26
+  criticalMultiplier: 2.1
+  falloffStart: 34
+  falloffEnd: 68
+  falloffFloor: 0.6
+  maxRange: 160
+  impactForce: 6
+  baseSpreadDegrees: 1.15
+  maxSpreadDegrees: 6.2
+  spreadPerShot: 0.34
+  spreadRecoveryPerSecond: 5.2
+  aimSpreadScale: 0.22
+  movementSpreadScale: 2.1
+  recoilVertical: 0.62
+  recoilHorizontal: 0.3
+  recoilRecoveryPerSecond: 9.5
+  kickBack: 0.028
+  magazineSize: 32
+  reserveAmmo: 256
+  maxReserveAmmo: 420
+  reloadSeconds: 2.05
+  incrementalReload: 0
+  shellsPerReloadStep: 1
+  aimMoveSpeedScale: 0.52
+  aimFovScale: 0.7
+  aimTransitionSeconds: 0.14
+  equipSeconds: 0.5
+  accentColor: {r: 0.239, g: 0.878, b: 0.855, a: 1}
+  tracerColor: {r: 0.55, g: 0.98, b: 1, a: 1}
+  muzzleFlashScale: 1.05
+  cameraShakeAmount: 0.24
+  lowFrequencyRumble: 0.22
+  highFrequencyRumble: 0.5
+  rumbleSeconds: 0.05
+  fireVolume: 0.5
+  firePitch: 1.32
