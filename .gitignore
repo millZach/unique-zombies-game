@@ -83,3 +83,5 @@ Thumbs.db
 # ---------------------------------------------------------------------------
 /[Aa]ssets/AssetStoreTools*
 
+# Mono crash dumps (a headless player run with -nographics leaves these)
+mono_crash.*
