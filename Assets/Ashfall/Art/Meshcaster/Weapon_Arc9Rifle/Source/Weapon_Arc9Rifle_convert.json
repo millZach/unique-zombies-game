@@ -1,0 +1,77 @@
+{
+  "align": {
+    "alignedToUnityAxis": "Z",
+    "centroidBias": 0.0456,
+    "flipped180": false,
+    "longestSourceAxis": "X",
+    "sourceExtents": [
+      1.90215,
+      0.1683,
+      0.76712
+    ]
+  },
+  "bakeAxes": true,
+  "blenderExtents": [
+    0.1683,
+    1.90215,
+    0.76712
+  ],
+  "materialSlots": [
+    "Weapon_Arc9Rifle_Mat"
+  ],
+  "meshObjects": 1,
+  "output": "/home/zach/projects/unique-zombies-game/Assets/Ashfall/Art/Meshcaster/Weapon_Arc9Rifle/Source/Weapon_Arc9Rifle.fbx",
+  "outputBytes": 465964,
+  "slot": "Weapon_Arc9Rifle",
+  "source": "/tmp/ashfall-meshcaster-run/output/01a0017a-959d-765d-90de-c14d3bed9b65/model_smoothed.glb",
+  "textureMaps": [
+    {
+      "name": "Image_0",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_1",
+      "source": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "Image_2",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_3",
+      "source": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "textures": [
+    "Weapon_Arc9Rifle_Image_0.jpg",
+    "Weapon_Arc9Rifle_Image_1.jpg",
+    "Weapon_Arc9Rifle_Image_2.jpg",
+    "Weapon_Arc9Rifle_Image_3.jpg"
+  ],
+  "triangles": 11798,
+  "unityExtents": {
+    "x": 0.1683,
+    "y": 0.76712,
+    "z": 1.90215
+  }
+}

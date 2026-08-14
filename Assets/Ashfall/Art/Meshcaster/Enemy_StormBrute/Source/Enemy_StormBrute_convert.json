@@ -1,0 +1,68 @@
+{
+  "align": {
+    "alignedToUnityAxis": null
+  },
+  "blenderExtents": [
+    1.09198,
+    0.60665,
+    1.90607
+  ],
+  "materialSlots": [
+    "Enemy_StormBrute_Mat"
+  ],
+  "meshObjects": 1,
+  "output": "/home/zach/projects/unique-zombies-game/Assets/Ashfall/Art/Meshcaster/Enemy_StormBrute/Source/Enemy_StormBrute.fbx",
+  "outputBytes": 419836,
+  "slot": "Enemy_StormBrute",
+  "source": "/tmp/ashfall-meshcaster-run/output/01a0017c-fcd3-7e8d-a281-b85684fdf53a/model_smoothed.glb",
+  "textureMaps": [
+    {
+      "name": "Image_0",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_1",
+      "source": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "Image_2",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_3",
+      "source": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "textures": [
+    "Enemy_StormBrute_Image_0.jpg",
+    "Enemy_StormBrute_Image_1.jpg",
+    "Enemy_StormBrute_Image_2.jpg",
+    "Enemy_StormBrute_Image_3.jpg"
+  ],
+  "triangles": 10728,
+  "unityExtents": {
+    "x": 1.09198,
+    "y": 1.90607,
+    "z": 0.60665
+  }
+}

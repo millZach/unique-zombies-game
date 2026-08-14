@@ -1,0 +1,76 @@
+{
+  "blender": "5.2.0 LTS",
+  "boneCount": 22,
+  "boneNames": [
+    "Root",
+    "Pelvis",
+    "Spine",
+    "Chest",
+    "Neck",
+    "Head",
+    "Shoulder.L",
+    "UpperArm.L",
+    "LowerArm.L",
+    "Hand.L",
+    "Shoulder.R",
+    "UpperArm.R",
+    "LowerArm.R",
+    "Hand.R",
+    "UpperLeg.L",
+    "LowerLeg.L",
+    "Foot.L",
+    "Toe.L",
+    "UpperLeg.R",
+    "LowerLeg.R",
+    "Foot.R",
+    "Toe.R"
+  ],
+  "clips": [
+    {
+      "end": 61,
+      "loop": true,
+      "name": "Idle",
+      "start": 1
+    },
+    {
+      "end": 41,
+      "loop": true,
+      "name": "Walk",
+      "start": 1
+    },
+    {
+      "end": 30,
+      "loop": false,
+      "name": "Attack",
+      "start": 1
+    },
+    {
+      "end": 18,
+      "loop": false,
+      "name": "HitReact",
+      "start": 1
+    },
+    {
+      "end": 45,
+      "loop": false,
+      "name": "Death",
+      "start": 1
+    }
+  ],
+  "deformBoneCount": 21,
+  "fbx": "Enemy_StormBrute_Rigged.fbx",
+  "fps": 30,
+  "generator": "Tools/Blender/rig_zombie.py",
+  "heightMeters": 2.85,
+  "leanDegrees": 8.0,
+  "materialSlots": 1,
+  "schemaVersion": 1,
+  "selfTest": false,
+  "slot": "Enemy_StormBrute",
+  "source": "imported-file",
+  "sourceFile": "Assets/Ashfall/Art/Meshcaster/Enemy_StormBrute/Source/Enemy_StormBrute.fbx",
+  "sourceSha256": "74518ec3125c41174572e46e5c48956012b45d6a3fa4c58bacb498a74df3c572",
+  "triangleCount": 10728,
+  "vertexCount": 8565,
+  "weighting": "envelope-fallback"
+}

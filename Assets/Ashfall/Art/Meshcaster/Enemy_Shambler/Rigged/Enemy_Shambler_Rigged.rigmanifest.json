@@ -1,0 +1,76 @@
+{
+  "blender": "5.2.0 LTS",
+  "boneCount": 22,
+  "boneNames": [
+    "Root",
+    "Pelvis",
+    "Spine",
+    "Chest",
+    "Neck",
+    "Head",
+    "Shoulder.L",
+    "UpperArm.L",
+    "LowerArm.L",
+    "Hand.L",
+    "Shoulder.R",
+    "UpperArm.R",
+    "LowerArm.R",
+    "Hand.R",
+    "UpperLeg.L",
+    "LowerLeg.L",
+    "Foot.L",
+    "Toe.L",
+    "UpperLeg.R",
+    "LowerLeg.R",
+    "Foot.R",
+    "Toe.R"
+  ],
+  "clips": [
+    {
+      "end": 61,
+      "loop": true,
+      "name": "Idle",
+      "start": 1
+    },
+    {
+      "end": 41,
+      "loop": true,
+      "name": "Walk",
+      "start": 1
+    },
+    {
+      "end": 30,
+      "loop": false,
+      "name": "Attack",
+      "start": 1
+    },
+    {
+      "end": 18,
+      "loop": false,
+      "name": "HitReact",
+      "start": 1
+    },
+    {
+      "end": 45,
+      "loop": false,
+      "name": "Death",
+      "start": 1
+    }
+  ],
+  "deformBoneCount": 21,
+  "fbx": "Enemy_Shambler_Rigged.fbx",
+  "fps": 30,
+  "generator": "Tools/Blender/rig_zombie.py",
+  "heightMeters": 1.85,
+  "leanDegrees": 26.0,
+  "materialSlots": 1,
+  "schemaVersion": 1,
+  "selfTest": false,
+  "slot": "Enemy_Shambler",
+  "source": "imported-file",
+  "sourceFile": "Assets/Ashfall/Art/Meshcaster/Enemy_Shambler/Source/Enemy_Shambler.fbx",
+  "sourceSha256": "d2a7fe14e20482633ffecb1a4680396100160c29f75a01d44b924e8dbf5e4dba",
+  "triangleCount": 17015,
+  "vertexCount": 11621,
+  "weighting": "envelope-fallback"
+}

@@ -1,0 +1,77 @@
+{
+  "align": {
+    "alignedToUnityAxis": "Z",
+    "centroidBias": -0.0393,
+    "flipped180": true,
+    "longestSourceAxis": "X",
+    "sourceExtents": [
+      1.90607,
+      0.12133,
+      0.44227
+    ]
+  },
+  "bakeAxes": true,
+  "blenderExtents": [
+    0.12133,
+    1.90607,
+    0.44227
+  ],
+  "materialSlots": [
+    "Weapon_BreakwaterShotgun_Mat"
+  ],
+  "meshObjects": 1,
+  "output": "/home/zach/projects/unique-zombies-game/Assets/Ashfall/Art/Meshcaster/Weapon_BreakwaterShotgun/Source/Weapon_BreakwaterShotgun.fbx",
+  "outputBytes": 511468,
+  "slot": "Weapon_BreakwaterShotgun",
+  "source": "/tmp/ashfall-meshcaster-run/output/01a0017a-955f-7dfa-9883-a228939b2a4b/model_smoothed.glb",
+  "textureMaps": [
+    {
+      "name": "Image_0",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_1",
+      "source": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "Image_2",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_3",
+      "source": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "textures": [
+    "Weapon_BreakwaterShotgun_Image_0.jpg",
+    "Weapon_BreakwaterShotgun_Image_1.jpg",
+    "Weapon_BreakwaterShotgun_Image_2.jpg",
+    "Weapon_BreakwaterShotgun_Image_3.jpg"
+  ],
+  "triangles": 15092,
+  "unityExtents": {
+    "x": 0.12133,
+    "y": 0.44227,
+    "z": 1.90607
+  }
+}

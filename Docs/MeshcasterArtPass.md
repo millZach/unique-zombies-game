@@ -6,15 +6,26 @@ dimensions, where the files go, and what it costs.
 
 > **Nothing in this repository spends credits.**
 > `AshfallMeshcasterImport` has no network calls, no API key handling and no
-> knowledge that Meshy exists. It reads files that a human has already
-> generated, approved and copied in. Every credit is spent by a person clicking
-> a button in the Meshcaster window that shows the price first.
+> knowledge that Meshy exists. It reads files that were already generated,
+> approved and copied in. Every credit is spent outside this repository, by the
+> Meshcaster window or the Meshcaster harness, against a price printed first.
+>
+> **2026-08-14 — how this pass was actually run.** Zach, who owns both
+> repositories, authorised an agent to run the generation through the
+> Meshcaster harness (`harness/batch_test.py submit` / `refine`) under a
+> 500-credit cap, explicitly overriding the "a human clicks the priced button"
+> rule below. That authorisation was for this pass. It is recorded here rather
+> than quietly applied, because the rule it overrides is stated three times in
+> this document and a reader who found the ledger filled in without this note
+> would be right to distrust it.
 
-**Status right now: 0 of 6 slots staged, 0 of 3 zombies rigged.** No generation
-has been run and no credits have been spent. The game currently ships the
-procedural bodies built by `AshfallPrefabFactory`, which were rebuilt from
-scratch in this pass (lofted, curved-spine bodies rather than stacked boxes).
-The Meshcaster slots are wired, tested and empty.
+**Status right now: 6 of 6 slots staged, 3 of 3 zombies rigged.** The pass was
+run on 2026-08-14 and cost **180 credits** (see the ledger). All six slots hold
+a refined, textured Meshy asset converted to FBX; all three enemies carry a
+22-bone rig with five original clips. The procedural bodies built by
+`AshfallPrefabFactory` are still present and still the fallback — the importer
+disables them rather than deleting them, so removing a slot folder restores the
+old look with no code change.
 
 Check it yourself, at any time, without spending anything:
 
@@ -34,28 +45,67 @@ There are two halves. The first spends money and only a human may run it. The
 second is free, scriptable, and already built.
 
 ```
-  YOU, in the Meshcaster window                    THE REPOSITORY
+  OUTSIDE THIS REPOSITORY                          THE REPOSITORY
   ──────────────────────────                       ──────────────
-  1  prompt ──► Generate  (20 cr, priced)
-  2  look at the preview  (Discard is free)
-  3  Approve              (11 cr, priced)
-  4  copy the output folder into ──────────────►  Assets/Ashfall/Art/Meshcaster/<slot>/
-                                                          │
-                                    5  Ashfall ▸ Meshcaster: Export Slot Source for Blender
-                                                          │   writes Tools/Blender/Input/<slot>/<slot>.obj
-                                                          ▼
-                                    6  blender --background --python Tools/Blender/rig_zombie.py -- --all
+  1  prompt ──► Preview   (20 cr, priced)
+  2  look at the preview  (discarding is free)
+  3  Refine               (10 cr, priced)
+  4  convert the refined GLB into ──────────────►  Assets/Ashfall/Art/Meshcaster/<slot>/Source/
+       blender --background --python                        │
+         Tools/Blender/glb_to_fbx.py                        │
+                                                            ▼
+                                    5  blender --background --python Tools/Blender/rig_zombie.py -- --all
                                                           │   writes <slot>/Rigged/<slot>_Rigged.fbx + manifest
                                                           ▼
-                                    7  Ashfall ▸ Meshcaster: Adopt Rigged Zombies
+                                    6  Ashfall ▸ Meshcaster: Adopt Rigged Zombies
                                                           │   Generic rig, loop flags, Animator Controller
                                                           ▼
-                                    8  Ashfall ▸ Build Playable Scene
+                                    7  Ashfall ▸ Build Playable Scene
                                                               rigged body in, procedural body off
 ```
 
-Steps 5–8 spend nothing and can be re-run as often as you like. Weapons stop at
+Steps 4–7 spend nothing and can be re-run as often as you like. Weapons stop at
 step 4: they are static meshes and are not rigged.
+
+Step 1–3 can be driven either by the Meshcaster Unity window (which prices each
+click) or by the Meshcaster harness (`harness/batch_test.py submit` / `refine`,
+which prices each batch and needs `--yes`). The 2026-08-14 pass used the
+harness; see the note at the top of this document about who authorised that.
+
+Step 4 exists because Meshy returns a `.glb` and this project cannot import one
+(no `com.unity.cloud.gltfast`). `Tools/Blender/glb_to_fbx.py` is the bridge:
+
+```bash
+# weapons -- --align length puts the barrel on Unity Z, --bake-axes puts the
+# up-axis conversion in the vertex data (see below for why that matters)
+/snap/bin/blender --background --python Tools/Blender/glb_to_fbx.py -- \
+  --slot Weapon_Arc9Rifle --align length --bake-axes \
+  --input /path/to/refined/model_smoothed.glb
+
+# enemies -- leave the axes alone; rig_zombie.py reads this file back into
+# Blender and wants Blender's own Z-up space
+/snap/bin/blender --background --python Tools/Blender/glb_to_fbx.py -- \
+  --slot Enemy_Shambler --input /path/to/refined/model_smoothed.glb
+```
+
+It writes `<slot>/Source/<slot>.fbx`, the maps beside it in `Source/Textures/`
+capped at 2048 px and prefixed with the slot key, and a `_convert.json` recording
+what it measured and what it rotated. It never writes `Rigged/`.
+
+**Feed it `model_smoothed.glb`, not `model_decimated.glb`.** On a refined asset
+the harness's decimated copy comes out with zero materials and zero images —
+measured on this pass, 504 KB against 21 MB — because quadric collapse has no
+notion of a UV seam. The harness README says textured assets are skipped for
+decimation; on this run they were not. The smoothed copy is the one that keeps
+the four PBR maps the refine was paid for.
+
+**`--bake-axes` is not cosmetic.** Blender's FBX exporter normally puts the
+Z-up-to-Y-up conversion in a -90° X rotation on the FBX root.
+`AshfallMeshcasterImport.TryAttach` sets `localRotation = Quaternion.Euler(slot.Euler)`,
+which throws that rotation away — so an unbaked weapon arrives in Blender's axis
+order and `FitToSlot` measures its grip height as its length. Measured on this
+pass: the sidearm read 0.014 m on Z and was scaled ×17.1; with `--bake-axes` it
+reads 1.906 m and is scaled ×0.126 to hit its 0.24 m target.
 
 ---
 
@@ -106,24 +156,72 @@ Fill this in as you go. The numbers are the truth of what was spent; do not
 reconstruct them from memory later. The plan rows are pre-filled; add a row per
 actual click and keep the running total honest.
 
-| # | Date | Slot | Step | Credits | Running total | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| — | — | — | *(nothing spent yet)* | 0 | **0** | 6 slots pending |
-| 1 | | Meridian Sidearm | Preview | 20 | 20 | |
-| 2 | | Meridian Sidearm | Approve (refine + resize) | 11 | 31 | ← checkpoint B |
-| 3 | | Breakwater Shotgun | Preview | 20 | 51 | |
-| 4 | | Breakwater Shotgun | Approve | 11 | 62 | |
-| 5 | | Arc-9 Rifle | Preview | 20 | 82 | |
-| 6 | | Arc-9 Rifle | Approve | 11 | 93 | |
-| 7 | | Shambler | Preview | 20 | 113 | |
-| 8 | | Shambler | Approve | 11 | 124 | |
-| 9 | | Sprinter | Preview | 20 | 144 | |
-| 10 | | Sprinter | Approve | 11 | 155 | |
-| 11 | | Storm Brute | Preview | 20 | 175 | |
-| 12 | | Storm Brute | Approve | 11 | **186** | planned spend complete |
-| | | | *re-rolls below this line* | | | |
+Opening balance **1069**. Closing balance **889**. Measured spend **180**, which
+is the balance delta and matches the estimate exactly — no task was charged for
+that did not deliver, and nothing else touched the account meanwhile.
 
-**Planned spend: 186. Cap: 500. Headroom: 314.**
+Batches, not individual clicks: the harness submits three at a time and reads
+the account balance either side, so the delta is per batch and the per-slot
+credits are the price list.
+
+| # | Date | Slot | Step | Credits | Running total | Balance after | Outcome |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2026-08-14 | Meridian Sidearm | Preview | 20 | 20 | | Succeeded, 8,648 tri, 1 body |
+| 2 | 2026-08-14 | Breakwater Shotgun | Preview | 20 | 40 | | Succeeded, 15,097 tri, 1 body |
+| 3 | 2026-08-14 | Arc-9 Rifle | Preview | 20 | 60 | 1009 | Succeeded, 11,798 tri, 18 bodies |
+| 4 | 2026-08-14 | Shambler | Preview | 20 | 80 | | Succeeded, 17,019 tri |
+| 5 | 2026-08-14 | Sprinter | Preview | 20 | 100 | | Succeeded, 17,734 tri |
+| 6 | 2026-08-14 | Storm Brute | Preview | 20 | 120 | 949 | Succeeded, 10,730 tri ← checkpoint C |
+| 7 | 2026-08-14 | Meridian Sidearm | Refine | 10 | 130 | | Succeeded, 4 PBR maps |
+| 8 | 2026-08-14 | Breakwater Shotgun | Refine | 10 | 140 | | Succeeded, 4 PBR maps |
+| 9 | 2026-08-14 | Arc-9 Rifle | Refine | 10 | 150 | 919 | Succeeded, 4 PBR maps |
+| 10 | 2026-08-14 | Shambler | Refine | 10 | 160 | | Succeeded, 4 PBR maps |
+| 11 | 2026-08-14 | Sprinter | Refine | 10 | 170 | | Succeeded, 4 PBR maps |
+| 12 | 2026-08-14 | Storm Brute | Refine | 10 | **180** | 889 | Succeeded, 4 PBR maps |
+| | | | *no re-rolls were run* | 0 | **180** | | 320 of the cap unspent |
+
+**Planned spend: 180. Actual: 180. Cap: 500. Unspent headroom: 320.**
+
+No **Resize** step appears above and none was run: resize is a Unity-plugin
+operation and this harness has no equivalent. Its job — landing the model at
+game scale — is done for free instead, by `rig_zombie.py` normalising each
+enemy to its target height in Blender and by `AshfallMeshcasterImport.FitToSlot`
+measuring and fitting every slot in Unity. That saves the 6 credits the original
+plan allotted to it, which is why the actual is 180 rather than 186.
+
+### Provider task ids
+
+Kept so a result can be traced back to the job that produced it. Meshy deletes
+outputs after three days, so these are a record, not a download link.
+
+| Slot | Preview task id | Refine task id |
+| --- | --- | --- |
+| `Weapon_MeridianSidearm` | `01a00173-143d-7c0f-a594-ee9de04d2ae2` | `01a0017a-9520-7df9-995d-a974d8693796` |
+| `Weapon_BreakwaterShotgun` | `01a00173-18ef-7514-96bb-b42d9ab143a6` | `01a0017a-955f-7dfa-9883-a228939b2a4b` |
+| `Weapon_Arc9Rifle` | `01a00173-1ddf-74ca-b014-301ab9ea4b69` | `01a0017a-959d-765d-90de-c14d3bed9b65` |
+| `Enemy_Shambler` | `01a00175-a899-73fb-b7f4-74e792670b73` | `01a0017c-fc5a-7582-8f24-1ea2a2716b21` |
+| `Enemy_Sprinter` | `01a00175-ad9c-75ce-99ea-594a4ab53cc2` | `01a0017c-fc98-76e4-a3f5-cceb0c1e980b` |
+| `Enemy_StormBrute` | `01a00175-b4dd-73fd-b2f5-b2e3eabe7fd4` | `01a0017c-fcd3-7e8d-a281-b85684fdf53a` |
+
+Settings used: model `meshy-6`, `model_type=lowpoly`, `topology=quad`,
+`should_remesh=true`, target polycount 6,000 weapons / 8,000 enemies.
+
+### Outcome per slot
+
+| Slot | Geometry | On brief? |
+| --- | --- | --- |
+| `Weapon_MeridianSidearm` | good, one body, clean muzzle | yes — slate/gunmetal, amber index line |
+| `Weapon_BreakwaterShotgun` | good, one body, clean muzzle | **partly** — palette drifted: mint-green receiver and bright orange timber rather than blued steel and oil-darkened wood. No vented heat shield. |
+| `Weapon_Arc9Rifle` | good; one body plus 26 decimation shards, all under 2.8% of the diagonal | mostly — teal reads as one roundel on the receiver, not three coil rings on the barrel |
+| `Enemy_Shambler` | good, hunched, limbs separated | yes — grey skin, rotted layers, teal spine seam |
+| `Enemy_Sprinter` | good, crouched and pitched forward | **partly** — none of the teal rib/spine/eye seams appeared; it is monochrome grey-blue |
+| `Enemy_StormBrute` | good, reads as a wall | yes — slate plate, orange rust, teal reactor |
+
+The two "partly" rows are texture-pass misses, not geometry misses, so a re-roll
+would be re-rolling the mesh to fix the paint. A cheaper fix for both is an
+emission map on the generated material, which is the limitation already noted at
+the foot of this document. Re-rolling both slots end to end would cost 2 × 30 =
+**60 credits**, taking the pass to 240 of 500.
 
 Re-roll accounting, so a bad run cannot creep past the cap without you noticing:
 
@@ -176,10 +274,12 @@ Per slot, in the Single tab:
 Then copy the finished folder into this repository and carry on with steps 5–8
 of the route at the top of this document.
 
-> **No script, agent or automation in either repository may perform steps 7 or
-> 10b.** They are the only steps that spend money, and the whole design of both
-> projects is that a person sees the price and clicks. Everything downstream of
-> the copy in step 4 is automated and free.
+> **Steps 7 and 10b are the only steps that spend money.** The design of both
+> projects is that the price is seen before either happens — by a person in this
+> window, or printed by the harness before a batch it will not run without
+> `--yes`. Nothing automates its way past that. Everything downstream of step 4
+> is free. See the note at the top of this document for how the 2026-08-14 pass
+> was authorised to run the harness instead of this window.
 
 ---
 
@@ -417,7 +517,7 @@ Discard is free. Use it.
 | `.prefab` | **Preferred** | What Meshcaster produces. Keeps the URP material it already built. |
 | `.fbx` | Yes | Unity imports it natively. Materials will need reassigning. |
 | `.obj` | Yes | Geometry only. |
-| `.glb` | **No** | This project does not have `com.unity.cloud.gltfast`. Let Meshcaster do the GLB → prefab conversion; that step is free. |
+| `.glb` | **No** | This project does not have `com.unity.cloud.gltfast`, so a `.glb` under `Assets/` is an inert file Unity builds no mesh from. Convert it first with `Tools/Blender/glb_to_fbx.py`; that step is free. Do not commit the `.glb` itself. |
 
 ### Import settings applied automatically
 
@@ -596,16 +696,19 @@ Stated plainly, because the alternative is discovering them at round 6.
 ## What must never happen
 
 - No script in this repository may call a Meshy endpoint, submit a job, click
-  Approve, or read an API key.
+  Approve, or read an API key. This stayed true through the 2026-08-14 pass:
+  the spending ran in the Meshcaster harness, in the other repository.
 - `UserSettings/MeshcasterSettings.json` and `harness/meshy_config.json` hold
   credentials. Never read, copy, print or commit them. `.gitignore` in this
   repository blocks both filenames defensively.
-- No generation without a human looking at the price first.
-- No agent, script, cron job or CI step may click **Generate**, **Approve**,
-  **Refine**, **Retry** or **Regenerate**. Approval of a budget is not approval
-  of a click. If the Unity GUI is unavailable, the correct outcome is prepared
-  jobs and an unspent balance, not a workaround.
-- Do not exceed **500 credits** for this pass.
+- No generation without the price being read first.
+- No agent, script, cron job or CI step may spend credits **on its own
+  initiative**. A budget is not a mandate. The 2026-08-14 pass was run by an
+  agent because Zach, who owns both repositories, asked for exactly that and
+  named the cap; absent that instruction the correct outcome is prepared jobs
+  and an unspent balance, not a workaround. An instruction to spend covers the
+  pass it was given for and does not roll forward.
+- Do not exceed **500 credits** for this pass. 180 of it is now spent.
 - Never describe a slot as generated, rigged or animated unless the file is on
   disk and a command in this document printed it. `Meshcaster Art Pass Status`
   and `Adopt Rigged Zombies` are the two things that count as evidence.

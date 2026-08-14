@@ -1,0 +1,68 @@
+{
+  "align": {
+    "alignedToUnityAxis": null
+  },
+  "blenderExtents": [
+    1.35029,
+    1.40117,
+    1.90607
+  ],
+  "materialSlots": [
+    "Enemy_Sprinter_Mat"
+  ],
+  "meshObjects": 1,
+  "output": "/home/zach/projects/unique-zombies-game/Assets/Ashfall/Art/Meshcaster/Enemy_Sprinter/Source/Enemy_Sprinter.fbx",
+  "outputBytes": 653580,
+  "slot": "Enemy_Sprinter",
+  "source": "/tmp/ashfall-meshcaster-run/output/01a0017c-fc98-76e4-a3f5-cceb0c1e980b/model_smoothed.glb",
+  "textureMaps": [
+    {
+      "name": "Image_0",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_1",
+      "source": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "Image_2",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_3",
+      "source": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "textures": [
+    "Enemy_Sprinter_Image_0.jpg",
+    "Enemy_Sprinter_Image_1.jpg",
+    "Enemy_Sprinter_Image_2.jpg",
+    "Enemy_Sprinter_Image_3.jpg"
+  ],
+  "triangles": 17734,
+  "unityExtents": {
+    "x": 1.35029,
+    "y": 1.90607,
+    "z": 1.40117
+  }
+}

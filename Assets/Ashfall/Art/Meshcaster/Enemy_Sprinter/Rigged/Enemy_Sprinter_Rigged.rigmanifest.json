@@ -1,0 +1,76 @@
+{
+  "blender": "5.2.0 LTS",
+  "boneCount": 22,
+  "boneNames": [
+    "Root",
+    "Pelvis",
+    "Spine",
+    "Chest",
+    "Neck",
+    "Head",
+    "Shoulder.L",
+    "UpperArm.L",
+    "LowerArm.L",
+    "Hand.L",
+    "Shoulder.R",
+    "UpperArm.R",
+    "LowerArm.R",
+    "Hand.R",
+    "UpperLeg.L",
+    "LowerLeg.L",
+    "Foot.L",
+    "Toe.L",
+    "UpperLeg.R",
+    "LowerLeg.R",
+    "Foot.R",
+    "Toe.R"
+  ],
+  "clips": [
+    {
+      "end": 61,
+      "loop": true,
+      "name": "Idle",
+      "start": 1
+    },
+    {
+      "end": 41,
+      "loop": true,
+      "name": "Walk",
+      "start": 1
+    },
+    {
+      "end": 30,
+      "loop": false,
+      "name": "Attack",
+      "start": 1
+    },
+    {
+      "end": 18,
+      "loop": false,
+      "name": "HitReact",
+      "start": 1
+    },
+    {
+      "end": 45,
+      "loop": false,
+      "name": "Death",
+      "start": 1
+    }
+  ],
+  "deformBoneCount": 21,
+  "fbx": "Enemy_Sprinter_Rigged.fbx",
+  "fps": 30,
+  "generator": "Tools/Blender/rig_zombie.py",
+  "heightMeters": 1.68,
+  "leanDegrees": 34.0,
+  "materialSlots": 1,
+  "schemaVersion": 1,
+  "selfTest": false,
+  "slot": "Enemy_Sprinter",
+  "source": "imported-file",
+  "sourceFile": "Assets/Ashfall/Art/Meshcaster/Enemy_Sprinter/Source/Enemy_Sprinter.fbx",
+  "sourceSha256": "2bd93bfa1b4eb766e6af82d3fd5394783b50c14cbc7613fa271b94828a1897a0",
+  "triangleCount": 17734,
+  "vertexCount": 12949,
+  "weighting": "envelope-fallback"
+}

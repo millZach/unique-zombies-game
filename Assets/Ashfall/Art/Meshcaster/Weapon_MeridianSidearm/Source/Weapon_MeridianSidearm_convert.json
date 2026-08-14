@@ -1,0 +1,77 @@
+{
+  "align": {
+    "alignedToUnityAxis": "Z",
+    "centroidBias": 0.0799,
+    "flipped180": false,
+    "longestSourceAxis": "X",
+    "sourceExtents": [
+      1.90607,
+      0.34051,
+      1.40117
+    ]
+  },
+  "bakeAxes": true,
+  "blenderExtents": [
+    0.34051,
+    1.90607,
+    1.40117
+  ],
+  "materialSlots": [
+    "Weapon_MeridianSidearm_Mat"
+  ],
+  "meshObjects": 1,
+  "output": "/home/zach/projects/unique-zombies-game/Assets/Ashfall/Art/Meshcaster/Weapon_MeridianSidearm/Source/Weapon_MeridianSidearm.fbx",
+  "outputBytes": 341996,
+  "slot": "Weapon_MeridianSidearm",
+  "source": "/tmp/ashfall-meshcaster-run/output/01a0017a-9520-7df9-995d-a974d8693796/model_smoothed.glb",
+  "textureMaps": [
+    {
+      "name": "Image_0",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_1",
+      "source": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "Image_2",
+      "scaledTo": [
+        2048,
+        2048
+      ],
+      "source": [
+        4096,
+        4096
+      ]
+    },
+    {
+      "name": "Image_3",
+      "source": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "textures": [
+    "Weapon_MeridianSidearm_Image_0.jpg",
+    "Weapon_MeridianSidearm_Image_1.jpg",
+    "Weapon_MeridianSidearm_Image_2.jpg",
+    "Weapon_MeridianSidearm_Image_3.jpg"
+  ],
+  "triangles": 8647,
+  "unityExtents": {
+    "x": 0.34051,
+    "y": 1.40117,
+    "z": 1.90607
+  }
+}
