@@ -109,6 +109,7 @@ namespace Ashfall.World
 
             SetBoardCount(_boardCount + 1, instant: false);
             int granted = wallet != null ? wallet.Award(salvagePerBoard) : salvagePerBoard;
+            Audio.AudioDirector.Instance?.PlayAt(Audio.AudioCue.BarricadeRepair, transform.position);
             Repaired?.Invoke(this, granted);
             return true;
         }

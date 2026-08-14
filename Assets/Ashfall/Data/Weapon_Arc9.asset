@@ -57,3 +57,4 @@ MonoBehaviour:
   rumbleSeconds: 0.05
   fireVolume: 0.5
   firePitch: 1.32
+  fireCue: 3

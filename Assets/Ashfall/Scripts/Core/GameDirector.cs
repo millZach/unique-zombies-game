@@ -160,6 +160,7 @@ namespace Ashfall.Core
 
             SetPaused(false);
 
+            Audio.AudioDirector.Instance?.StopAll();
             enemies?.DespawnAll();
             powerUps?.ResetAll();
             wallet?.ResetWallet();
@@ -201,6 +202,7 @@ namespace Ashfall.Core
                 mapPhase?.ApplyRound(Round, instant: false);
 
                 SetState(GameState.RoundIntro);
+                Audio.AudioDirector.Instance?.Play2D(Audio.AudioCue.RoundStart);
                 RoundStarted?.Invoke(Round, Composition);
 
                 if (phaseChanges)
@@ -225,6 +227,7 @@ namespace Ashfall.Core
                 SetState(GameState.RoundClear);
                 int bonus = RoundPlan.ClearBonusFor(Round);
                 wallet?.AwardFlat(bonus);
+                Audio.AudioDirector.Instance?.Play2D(Audio.AudioCue.RoundComplete);
                 RoundCleared?.Invoke(Round);
                 ObjectiveChanged?.Invoke($"Round {Round} clear.  +{bonus} salvage.  Spend it.", roundClearSeconds);
 
@@ -430,6 +433,7 @@ namespace Ashfall.Core
 
             IsPaused = paused;
             Time.timeScale = paused ? 0f : 1f;
+            Audio.AudioDirector.Instance?.SetPaused(paused);
             player?.SetControlEnabled(!paused && !State.IsRunOver());
             AshfallInput.Instance.SetCursorLocked(!paused && !State.IsRunOver());
 

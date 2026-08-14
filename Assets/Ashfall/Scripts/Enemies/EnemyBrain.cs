@@ -289,6 +289,11 @@ namespace Ashfall.Enemies
             Vector3 origin = attackOrigin != null ? attackOrigin.position : transform.position + Vector3.up;
             float distance = Vector3.Distance(origin, _target.position + Vector3.up);
 
+            // The swing is audible whether or not it lands: a miss the player
+            // heard is the feedback that backing off worked.
+            Audio.AudioDirector.Instance?.PlayAt(
+                Audio.AudioCues.AttackFor(definition.archetype), origin);
+
             // Re-check on the swing rather than on the windup: backing out of range in
             // time is the core defensive skill in the game.
             if (distance > definition.attackRange * 1.25f)

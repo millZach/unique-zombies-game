@@ -321,6 +321,439 @@ namespace Ashfall.EditorTools
             return Register(key, mesh);
         }
 
+        // ------------------------------------------------------------------
+        // Organic shapes: lofts, ellipsoids and chamfered boxes
+        //
+        // A box is the wrong primitive for a body. Ten boxes stacked into a
+        // torso read as ten boxes no matter how carefully they are placed,
+        // because every silhouette edge is a straight line and every surface
+        // normal is one of six constants -- so the lighting never curves and
+        // the eye gets no information about volume.
+        //
+        // A loft fixes both at once: the outline follows a spine the caller
+        // draws, and the normals are computed from the surface itself, so a
+        // shoulder actually catches light like a shoulder. The cost is about
+        // 100 triangles per limb, which at twenty-four concurrent enemies is
+        // still under thirty thousand triangles for the whole field.
+        // ------------------------------------------------------------------
+
+        /// <summary>One cross-section of a lofted shape: an ellipse at a point on the spine.</summary>
+        public readonly struct LoftRing
+        {
+            public readonly Vector3 Center;
+            public readonly float RadiusX;
+            public readonly float RadiusZ;
+
+            public LoftRing(Vector3 center, float radiusX, float radiusZ)
+            {
+                Center = center;
+                RadiusX = radiusX;
+                RadiusZ = radiusZ;
+            }
+
+            public LoftRing(Vector3 center, float radius) : this(center, radius, radius)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Skins a series of elliptical cross-sections into one smooth surface.
+        ///
+        /// Normals are derived from the surface, not from
+        /// <c>RecalculateNormals</c>: the UV seam duplicates its vertices, and
+        /// averaging would leave a visible crease straight down the front of
+        /// every body. Computing them from the ring and spine tangents gives
+        /// the seam the same normal on both sides for free.
+        /// </summary>
+        public static Mesh Loft(
+            string name,
+            IReadOnlyList<LoftRing> rings,
+            int segments = 10,
+            bool capStart = true,
+            bool capEnd = true,
+            float tileSize = 1f)
+        {
+            if (rings == null || rings.Count < 2)
+            {
+                throw new System.ArgumentException($"Loft '{name}' needs at least two rings.", nameof(rings));
+            }
+
+            segments = Mathf.Max(3, segments);
+            string key = $"Loft_{name}_{segments}_{(capStart ? 1 : 0)}{(capEnd ? 1 : 0)}_{HashRings(rings, tileSize):x8}";
+            if (Cache.TryGetValue(key, out Mesh cached))
+            {
+                return cached;
+            }
+
+            int ringCount = rings.Count;
+            int perRing = segments + 1;
+
+            var vertices = new List<Vector3>(ringCount * perRing + 2 * (segments + 2));
+            var normals = new List<Vector3>(vertices.Capacity);
+            var uvs = new List<Vector2>(vertices.Capacity);
+            var triangles = new List<int>(ringCount * segments * 6 + segments * 6);
+
+            // v runs with real distance along the spine so a long limb and a
+            // short one land at the same texel density.
+            var spineV = new float[ringCount];
+            for (int i = 1; i < ringCount; i++)
+            {
+                spineV[i] = spineV[i - 1] + Vector3.Distance(rings[i - 1].Center, rings[i].Center);
+            }
+
+            for (int i = 0; i < ringCount; i++)
+            {
+                LoftRing ring = rings[i];
+
+                // Central difference along the spine, one-sided at the ends.
+                Vector3 spineTangent = rings[Mathf.Min(i + 1, ringCount - 1)].Center
+                                       - rings[Mathf.Max(i - 1, 0)].Center;
+                if (spineTangent.sqrMagnitude < 1e-10f)
+                {
+                    spineTangent = Vector3.up;
+                }
+
+                float radiusSlopeX = (rings[Mathf.Min(i + 1, ringCount - 1)].RadiusX
+                                      - rings[Mathf.Max(i - 1, 0)].RadiusX);
+                float radiusSlopeZ = (rings[Mathf.Min(i + 1, ringCount - 1)].RadiusZ
+                                      - rings[Mathf.Max(i - 1, 0)].RadiusZ);
+
+                float circumference = Mathf.PI * (ring.RadiusX + ring.RadiusZ);
+
+                for (int s = 0; s <= segments; s++)
+                {
+                    float t = s / (float)segments;
+                    float angle = t * Mathf.PI * 2f;
+                    float cos = Mathf.Cos(angle);
+                    float sin = Mathf.Sin(angle);
+
+                    var offset = new Vector3(cos * ring.RadiusX, 0f, sin * ring.RadiusZ);
+                    vertices.Add(ring.Center + offset);
+
+                    // The exact surface normal, from the two surface tangents.
+                    //
+                    // The meridian tangent has to include the radius change,
+                    // not just the spine direction. Leaving that term out is
+                    // the difference between a cone that shades like a cone and
+                    // one that shades like a cylinder -- and at an ellipsoid's
+                    // poles, where the radius collapses to nothing, it is the
+                    // difference between a sphere and a lantern.
+                    var radial = new Vector3(
+                        cos * Mathf.Max(ring.RadiusZ, 1e-5f),
+                        0f,
+                        sin * Mathf.Max(ring.RadiusX, 1e-5f)).normalized;
+
+                    Vector3 alongRing = new Vector3(-sin * ring.RadiusX, 0f, cos * ring.RadiusZ).normalized;
+                    Vector3 alongSpine = spineTangent + new Vector3(cos * radiusSlopeX, 0f, sin * radiusSlopeZ);
+
+                    Vector3 normal = Vector3.Cross(alongSpine, alongRing);
+                    if (normal.sqrMagnitude < 1e-12f)
+                    {
+                        normal = radial;
+                    }
+
+                    normal = normal.normalized;
+                    if (Vector3.Dot(normal, radial) < 0f)
+                    {
+                        normal = -normal;
+                    }
+
+                    normals.Add(normal);
+
+                    uvs.Add(new Vector2(t * circumference / tileSize, spineV[i] / tileSize));
+                }
+            }
+
+            for (int i = 0; i < ringCount - 1; i++)
+            {
+                for (int s = 0; s < segments; s++)
+                {
+                    int a = i * perRing + s;
+                    int b = a + 1;
+                    int c = a + perRing;
+                    int d = c + 1;
+
+                    triangles.Add(a);
+                    triangles.Add(c);
+                    triangles.Add(b);
+                    triangles.Add(b);
+                    triangles.Add(c);
+                    triangles.Add(d);
+                }
+            }
+
+            if (capStart)
+            {
+                AddLoftCap(vertices, normals, uvs, triangles, rings[0], segments, -1, tileSize);
+            }
+
+            if (capEnd)
+            {
+                AddLoftCap(vertices, normals, uvs, triangles, rings[ringCount - 1], segments, 1, tileSize);
+            }
+
+            var mesh = new Mesh();
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0);
+            return Register(key, mesh);
+        }
+
+        private static void AddLoftCap(
+            List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs, List<int> triangles,
+            LoftRing ring, int segments, int direction, float tileSize)
+        {
+            Vector3 normal = direction > 0 ? Vector3.up : Vector3.down;
+
+            int center = vertices.Count;
+            vertices.Add(ring.Center);
+            normals.Add(normal);
+            uvs.Add(new Vector2(0.5f, 0.5f));
+
+            for (int s = 0; s <= segments; s++)
+            {
+                float angle = s / (float)segments * Mathf.PI * 2f;
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+                vertices.Add(ring.Center + new Vector3(cos * ring.RadiusX, 0f, sin * ring.RadiusZ));
+                normals.Add(normal);
+                uvs.Add(new Vector2(cos * ring.RadiusX / tileSize + 0.5f, sin * ring.RadiusZ / tileSize + 0.5f));
+            }
+
+            for (int s = 0; s < segments; s++)
+            {
+                if (direction > 0)
+                {
+                    triangles.Add(center);
+                    triangles.Add(center + s + 2);
+                    triangles.Add(center + s + 1);
+                }
+                else
+                {
+                    triangles.Add(center);
+                    triangles.Add(center + s + 1);
+                    triangles.Add(center + s + 2);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A tapered, optionally curved limb: the workhorse behind every arm and leg.
+        /// </summary>
+        /// <param name="bend">Sideways displacement of the midpoint, in local +Z.</param>
+        public static Mesh Limb(
+            string name, float length, float rootRadius, float midRadius, float tipRadius,
+            float bend = 0f, int segments = 8, bool round = true)
+        {
+            var rings = new List<LoftRing>(5);
+            for (int i = 0; i < 5; i++)
+            {
+                float t = i / 4f;
+                // Sine bulge puts the bend at the middle and leaves the ends where
+                // the caller put them, so joints still line up after the curve.
+                float z = Mathf.Sin(t * Mathf.PI) * bend;
+                float radius = t < 0.5f
+                    ? Mathf.Lerp(rootRadius, midRadius, t * 2f)
+                    : Mathf.Lerp(midRadius, tipRadius, (t - 0.5f) * 2f);
+
+                // Rounding the ends costs two rings and removes the flat disc
+                // that otherwise reads as a cut-off pipe.
+                if (round && (i == 0 || i == 4))
+                {
+                    radius *= 0.62f;
+                }
+
+                rings.Add(new LoftRing(new Vector3(0f, -length * 0.5f + length * t, z), radius));
+            }
+
+            return Loft(name, rings, segments, capStart: true, capEnd: true, tileSize: 0.5f);
+        }
+
+        /// <summary>A smooth ellipsoid. Heads, hands, feet, canister cores.</summary>
+        public static Mesh Ellipsoid(string name, Vector3 radii, int segments = 12, int stacks = 8)
+        {
+            var rings = new List<LoftRing>(stacks + 1);
+            for (int i = 0; i <= stacks; i++)
+            {
+                float t = i / (float)stacks;
+                float phi = t * Mathf.PI;
+                float y = -Mathf.Cos(phi) * radii.y;
+                float r = Mathf.Sin(phi);
+                rings.Add(new LoftRing(new Vector3(0f, y, 0f),
+                    Mathf.Max(r * radii.x, 1e-4f),
+                    Mathf.Max(r * radii.z, 1e-4f)));
+            }
+
+            return Loft(name, rings, segments, capStart: false, capEnd: false, tileSize: 0.5f);
+        }
+
+        /// <summary>
+        /// A box with its edges knocked off.
+        ///
+        /// On weapons this matters more than any amount of extra detail: a
+        /// hard 90-degree edge produces a single hard lighting break, while a
+        /// two-millimetre bevel catches a highlight along the whole length of
+        /// the receiver and is what makes a viewmodel read as machined metal.
+        /// </summary>
+        public static Mesh Chamfer(Vector3 size, float bevel, float tileSize = 0.25f)
+        {
+            string key = $"Cham_{size.x:0.####}x{size.y:0.####}x{size.z:0.####}_b{bevel:0.####}_t{tileSize:0.##}";
+            if (Cache.TryGetValue(key, out Mesh cached))
+            {
+                return cached;
+            }
+
+            Vector3 h = size * 0.5f;
+            float maxBevel = Mathf.Min(h.x, Mathf.Min(h.y, h.z)) * 0.48f;
+            bevel = Mathf.Clamp(bevel, 0.0004f, Mathf.Max(0.0004f, maxBevel));
+
+            var vertices = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var triangles = new List<int>();
+
+            // Four horizontal rings: the two bevelled ends pull in by the bevel
+            // amount, the two middle ones sit at full width.
+            var profile = new[]
+            {
+                (y: -h.y, inset: bevel),
+                (y: -h.y + bevel, inset: 0f),
+                (y: h.y - bevel, inset: 0f),
+                (y: h.y, inset: bevel)
+            };
+
+            const int corner = 2;               // subdivisions per rounded corner
+            int perRing = 4 * (corner + 1);
+            var quadrants = new[] { (sx: 1f, sz: 1f), (sx: -1f, sz: 1f), (sx: -1f, sz: -1f), (sx: 1f, sz: -1f) };
+
+            for (int p = 0; p < profile.Length; p++)
+            {
+                float y = profile[p].y;
+                float cx = Mathf.Max(h.x - profile[p].inset - bevel, 0f);
+                float cz = Mathf.Max(h.z - profile[p].inset - bevel, 0f);
+                float perimeter = 0f;
+
+                for (int c = 0; c < 4; c++)
+                {
+                    (float sx, float sz) = quadrants[c];
+                    for (int k = 0; k <= corner; k++)
+                    {
+                        // Sweep each corner from the +X face round to the +Z
+                        // face, alternating direction so the ring stays convex.
+                        float angle = k / (float)corner * Mathf.PI * 0.5f;
+                        float ax = c % 2 == 0 ? Mathf.Cos(angle) : Mathf.Sin(angle);
+                        float az = c % 2 == 0 ? Mathf.Sin(angle) : Mathf.Cos(angle);
+
+                        var v = new Vector3(sx * (cx + ax * bevel), y, sz * (cz + az * bevel));
+                        if (vertices.Count > p * perRing)
+                        {
+                            perimeter += Vector3.Distance(vertices[vertices.Count - 1], v);
+                        }
+
+                        vertices.Add(v);
+                        uvs.Add(new Vector2(perimeter / tileSize, (y + h.y) / tileSize));
+                    }
+                }
+            }
+
+            for (int p = 0; p < profile.Length - 1; p++)
+            {
+                for (int s = 0; s < perRing; s++)
+                {
+                    int a = p * perRing + s;
+                    int b = p * perRing + (s + 1) % perRing;
+                    int c = a + perRing;
+                    int d = p * perRing + perRing + (s + 1) % perRing;
+
+                    triangles.Add(a); triangles.Add(c); triangles.Add(b);
+                    triangles.Add(b); triangles.Add(c); triangles.Add(d);
+                }
+            }
+
+            AddChamferCap(vertices, uvs, triangles, 0, perRing, false, tileSize);
+            AddChamferCap(vertices, uvs, triangles, (profile.Length - 1) * perRing, perRing, true, tileSize);
+
+            var mesh = new Mesh();
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0);
+
+            // The caps re-emit their own vertices, so averaging gives the side
+            // wall a smooth bevel highlight and leaves the caps flat -- exactly
+            // the split a chamfered part wants.
+            mesh.RecalculateNormals();
+            return Register(key, mesh);
+        }
+
+        private static void AddChamferCap(
+            List<Vector3> vertices, List<Vector2> uvs, List<int> triangles,
+            int ringStart, int perRing, bool facingUp, float tileSize)
+        {
+            Vector3 sum = Vector3.zero;
+            for (int i = 0; i < perRing; i++)
+            {
+                sum += vertices[ringStart + i];
+            }
+
+            int center = vertices.Count;
+            vertices.Add(sum / perRing);
+            uvs.Add(new Vector2(0.5f, 0.5f));
+
+            int rim = vertices.Count;
+            for (int i = 0; i < perRing; i++)
+            {
+                Vector3 v = vertices[ringStart + i];
+                vertices.Add(v);
+                uvs.Add(new Vector2(v.x / tileSize + 0.5f, v.z / tileSize + 0.5f));
+            }
+
+            for (int i = 0; i < perRing; i++)
+            {
+                int a = rim + i;
+                int b = rim + (i + 1) % perRing;
+                if (facingUp)
+                {
+                    triangles.Add(center); triangles.Add(b); triangles.Add(a);
+                }
+                else
+                {
+                    triangles.Add(center); triangles.Add(a); triangles.Add(b);
+                }
+            }
+        }
+
+        private static uint HashRings(IReadOnlyList<LoftRing> rings, float tileSize)
+        {
+            // FNV-1a over quantised values: two callers that ask for the same
+            // shape share one mesh, and a shape that changes gets a new key
+            // rather than silently reusing a stale asset.
+            unchecked
+            {
+                uint hash = 2166136261u;
+
+                void Feed(float value)
+                {
+                    int quantised = Mathf.RoundToInt(value * 10000f);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        hash = (hash ^ (byte)(quantised >> (i * 8))) * 16777619u;
+                    }
+                }
+
+                for (int i = 0; i < rings.Count; i++)
+                {
+                    Feed(rings[i].Center.x);
+                    Feed(rings[i].Center.y);
+                    Feed(rings[i].Center.z);
+                    Feed(rings[i].RadiusX);
+                    Feed(rings[i].RadiusZ);
+                }
+
+                Feed(tileSize);
+                return hash;
+            }
+        }
+
         /// <summary>Flat quad facing +Z, for signage and decals.</summary>
         public static Mesh Quad(Vector2 size, float tileSize = 1f)
         {

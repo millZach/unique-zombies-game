@@ -166,6 +166,7 @@ namespace Ashfall.EditorTools
 
             AshfallTextureFactory.GenerateAll();
             AshfallMaterialLibrary.BuildAll();
+            AshfallAudioLibrary.ConfigureImportSettings();
             AshfallPrefabFactory.BuildAll();
 
             BuildScene();
@@ -183,6 +184,7 @@ namespace Ashfall.EditorTools
             AshfallAssetUtility.EnsureFolder("Assets/Ashfall/Art/Generated/Materials");
             AshfallAssetUtility.EnsureFolder("Assets/Ashfall/Art/Generated/Meshes");
             AshfallAssetUtility.EnsureFolder("Assets/Ashfall/Art/Generated/UI");
+            AshfallAssetUtility.EnsureFolder(AshfallAudioLibrary.AudioFolder);
             AshfallAssetUtility.EnsureFolder(AshfallAssetUtility.PrefabFolder);
             AshfallAssetUtility.EnsureFolder(AshfallAssetUtility.DataFolder);
             AshfallAssetUtility.EnsureFolder(AshfallAssetUtility.SettingsFolder);
@@ -322,6 +324,7 @@ namespace Ashfall.EditorTools
             var phaseController = systemsGo.AddComponent<MapPhaseController>();
             var gameDirector = systemsGo.AddComponent<GameDirector>();
             var fx = systemsGo.AddComponent<FxDirector>();
+            var audio = systemsGo.AddComponent<Ashfall.Audio.AudioDirector>();
 
             // Input lives on its own object. Both input singletons call
             // DontDestroyOnLoad on themselves, and hosting them on the shared Systems
@@ -367,6 +370,8 @@ namespace Ashfall.EditorTools
                       $"{report.IsolatedNodeCount} isolated nodes.");
 
             // --- wiring ---------------------------------------------------------------
+            audio.Configure(AshfallAudioLibrary.BuildCueTable(), AshfallAudioLibrary.StormAmbience());
+
             fx.Configure(
                 AshfallPrefabFactory.SparkPrefab,
                 AshfallPrefabFactory.DustPrefab,

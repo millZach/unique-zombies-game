@@ -3,6 +3,7 @@
     "rootNamespace": "Ashfall.Tests",
     "references": [
         "Ashfall.Runtime",
+        "Ashfall.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

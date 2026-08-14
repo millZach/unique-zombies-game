@@ -153,6 +153,7 @@ namespace Ashfall.World
 
             pickup.Arm(kind, grounded, playerTransform);
             _live.Add(pickup);
+            Audio.AudioDirector.Instance?.PlayAt(Audio.AudioCue.PowerUpDrop, grounded);
             PowerUpDropped?.Invoke(kind, grounded);
         }
 
@@ -176,6 +177,7 @@ namespace Ashfall.World
             // Re-collecting refreshes the timer from now rather than stacking.
             _activeUntil[kind] = Time.time + t.durationSeconds;
             ApplyEffect(kind, t, true);
+            Audio.AudioDirector.Instance?.Play2D(Audio.AudioCue.PowerUpPickup);
             PowerUpActivated?.Invoke(kind, t.durationSeconds);
         }
 

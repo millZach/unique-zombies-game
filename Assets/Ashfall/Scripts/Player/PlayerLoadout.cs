@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Ashfall.Audio;
 using Ashfall.Core;
 using Ashfall.Fx;
 using Ashfall.InputLayer;
@@ -229,6 +230,7 @@ namespace Ashfall.Player
             else
             {
                 slot.Runtime?.BeginEquip();
+                AudioDirector.Instance?.Play2D(AudioCue.WeaponEquip);
             }
 
             WeaponChanged?.Invoke(slot);
@@ -275,7 +277,7 @@ namespace Ashfall.Player
             {
                 if (input.ReloadPressed)
                 {
-                    weapon.TryBeginReload();
+                    BeginReload(slot);
                 }
 
                 bool fired = weapon.TryFire(input.FireHeld, input.FirePressed);
@@ -288,14 +290,15 @@ namespace Ashfall.Player
                 {
                     // Dry fire: start the reload for the player rather than making them
                     // discover the R key while a sprinter is on top of them.
-                    weapon.TryBeginReload();
+                    AudioDirector.Instance?.Play2D(AudioCue.WeaponDryFire);
+                    BeginReload(slot);
                 }
             }
 
             // Auto-reload once the trigger is released on an empty magazine.
             if (weapon.IsEmpty && weapon.HasReserve && !input.FireHeld && weapon.State == WeaponState.Ready)
             {
-                weapon.TryBeginReload();
+                BeginReload(slot);
             }
 
             if (weapon.State == WeaponState.Reloading && weapon.ReloadProgress >= 0.999f)
@@ -308,6 +311,26 @@ namespace Ashfall.Player
                 slot.View.Tick(deltaTime, weapon.ReloadProgress, weapon.State == WeaponState.Reloading);
                 slot.View.ApplyEquipPose(weapon.EquipProgress);
             }
+        }
+
+        /// <summary>
+        /// Starts a reload and sounds it, from whichever of the three routes
+        /// asked -- the reload key, a dry trigger, or the automatic top-up when
+        /// the trigger is released on an empty magazine.
+        /// </summary>
+        private bool BeginReload(WeaponSlot slot)
+        {
+            if (slot?.Runtime == null || !slot.Runtime.TryBeginReload())
+            {
+                return false;
+            }
+
+            if (slot.definition != null)
+            {
+                AudioDirector.Instance?.Play2D(slot.definition.ReloadCue);
+            }
+
+            return true;
         }
 
         private void HandleSwitching(in InputFrame input)
@@ -366,6 +389,10 @@ namespace Ashfall.Player
             cameraRig?.AddKickBack(def.kickBack);
             slot.View?.PlayFire(def.muzzleFlashScale, def.accentColor);
             GamepadRumble.Pulse(def.lowFrequencyRumble, def.highFrequencyRumble, def.rumbleSeconds);
+
+            // 2D: the gun is welded to the camera, and positioning it costs the
+            // low end that makes a shot feel like it has recoil.
+            AudioDirector.Instance?.Play2D(def.fireCue, def.fireVolume, def.firePitch);
 
             if (anyHit)
             {
@@ -438,6 +465,7 @@ namespace Ashfall.Player
             if (damageable == null || !damageable.IsAlive)
             {
                 FxDirector.Instance?.SpawnWorldImpact(hit.point, hit.normal, def.accentColor);
+                AudioDirector.Instance?.PlayAt(AudioCue.ImpactWorld, hit.point);
                 return false;
             }
 
@@ -460,6 +488,11 @@ namespace Ashfall.Player
 
             killed = !damageable.IsAlive;
             FxDirector.Instance?.SpawnFleshImpact(hit.point, hit.normal, critical);
+
+            // Nine shotgun pellets landing on one body in one frame is one
+            // impact, not nine: the director's per-cue interval collapses them.
+            AudioDirector.Instance?.PlayAt(
+                critical ? AudioCue.ImpactCritical : AudioCue.ImpactFlesh, hit.point);
             return true;
         }
 

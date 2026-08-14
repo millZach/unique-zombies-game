@@ -88,6 +88,18 @@ namespace Ashfall.Weapons
         public float fireVolume = 0.55f;
         public float firePitch = 1f;
 
+        [Tooltip("Which shot the audio director plays. Data, not a switch statement in the loadout.")]
+        public Audio.AudioCue fireCue = Audio.AudioCue.WeaponFireSidearm;
+
+        /// <summary>
+        /// Shell-at-a-time weapons get the single-shell insert; everything else
+        /// gets the full magazine change. Derived rather than authored, so the
+        /// two can never disagree about which reload the weapon actually does.
+        /// </summary>
+        public Audio.AudioCue ReloadCue => incrementalReload
+            ? Audio.AudioCue.WeaponReloadShell
+            : Audio.AudioCue.WeaponReloadMagazine;
+
         /// <summary>Seconds between shots implied by <see cref="roundsPerMinute"/>.</summary>
         public float ShotInterval => roundsPerMinute <= 0f ? 0.2f : 60f / roundsPerMinute;
 
@@ -169,6 +181,7 @@ namespace Ashfall.Weapons
             d.rumbleSeconds = 0.07f;
             d.fireVolume = 0.45f;
             d.firePitch = 1.15f;
+            d.fireCue = Audio.AudioCue.WeaponFireSidearm;
         }
 
         public static void ApplyBreakwaterShotgun(WeaponDefinition d)
@@ -214,6 +227,7 @@ namespace Ashfall.Weapons
             d.rumbleSeconds = 0.16f;
             d.fireVolume = 0.75f;
             d.firePitch = 0.82f;
+            d.fireCue = Audio.AudioCue.WeaponFireShotgun;
         }
 
         public static void ApplyArc9Rifle(WeaponDefinition d)
@@ -257,6 +271,7 @@ namespace Ashfall.Weapons
             d.rumbleSeconds = 0.05f;
             d.fireVolume = 0.5f;
             d.firePitch = 1.32f;
+            d.fireCue = Audio.AudioCue.WeaponFireRifle;
         }
     }
 }

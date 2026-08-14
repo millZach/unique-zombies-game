@@ -91,6 +91,7 @@ namespace Ashfall.Core
 
             if (balance < cost)
             {
+                Audio.AudioDirector.Instance?.Play2D(Audio.AudioCue.PurchaseDenied);
                 PurchaseDenied?.Invoke(cost);
                 return false;
             }

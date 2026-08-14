@@ -233,11 +233,13 @@ $UNITY -batchmode -nographics -projectPath "$PWD" \
   -logFile /tmp/ashfall-play-tests.log
 ```
 
-57 edit-mode tests cover round composition, the phase schedule, weapon
-ammo/cadence/damage maths, and A* pathfinding with gates. The play-mode suite
-loads the real scene and asserts the loop actually turns over: enemies spawn and
-close distance, kills pay salvage, routes cost money and open gates, power-ups
-apply and expire, phases change the world, and restart resets everything.
+86 edit-mode tests cover round composition, the phase schedule, weapon
+ammo/cadence/damage maths, A* pathfinding with gates, generated weapon/enemy
+geometry, and the pooled audio director. The 24-test play-mode suite loads the
+real scene and asserts the loop actually turns over: enemies spawn and close
+distance, kills pay salvage, routes cost money and open gates, power-ups apply
+and expire, phases change the world, restart resets everything, and each major
+gameplay/audio event reaches the audio director.
 
 **Blender source assets:**
 ```bash
@@ -253,6 +255,17 @@ $UNITY -batchmode -nographics -projectPath "$PWD" \
   -logFile /tmp/ashfall-player.log
 ```
 Outputs to `Builds/Linux/Ashfall.x86_64` (git-ignored).
+
+**Audio source and inspection:**
+```bash
+/usr/bin/python3 Tools/Audio/generate_audio.py
+/usr/bin/python3 Tools/Audio/inspect_audio.py --png /tmp/ashfall-audio.png
+```
+The generator creates 29 deterministic, original PCM WAV clips under
+`Assets/Ashfall/Audio/`; the inspector checks for silence, clipping, DC offset,
+and non-finite samples. Audio is wired through the pooled `AudioDirector` in the
+scene. The Meshcaster art-pass prompts, 500-credit ledger, approval gate, and
+six-slot import workflow are documented in `Docs/MeshcasterArtPass.md`.
 
 ---
 
@@ -270,13 +283,17 @@ Assets/Ashfall/
 │   ├── UI/             HUD and pause menu
 │   ├── Input/          input abstraction, gamepad haptics
 │   └── Fx/             pooled impacts, tracers, muzzle flashes
-├── Editor/             scene builder, validation, nav diagnostics, player build
+├── Audio/              original generated WAV clips
+├── Art/Meshcaster/     six empty approved-output staging slots
+├── Editor/             scene builder, validation, audio/art import helpers
 ├── Tests/              EditMode and PlayMode suites
 ├── Scenes/Main.unity   the generated, committed playable scene
 ├── Prefabs/            generated enemy, weapon, FX and pickup prefabs
 ├── Data/               generated weapon and enemy ScriptableObjects
 └── Art/Generated/      generated textures, materials, meshes, UI sprites
 Tools/Blender/          original source-asset generation
+Tools/Audio/            deterministic original audio generation and inspection
+Docs/MeshcasterArtPass.md  prompts, settings, ledger, and import handoff
 ```
 
 ### Architecture notes
@@ -301,10 +318,18 @@ Tools/Blender/          original source-asset generation
 
 Honest list of what is not done.
 
-- **No audio.** There are no sound effects or music. `fireVolume` / `firePitch`
-  exist on the weapon definitions as hooks, but nothing plays them. The headless
-  Linux environment this was built in has no audio device, so any audio work
-  would have been unverifiable.
+- **Audio is now included.** Twenty-nine deterministic, license-safe WAV clips
+  cover weapons, reloads, impacts, enemies, player damage, power-ups, purchases,
+  round stingers, and storm ambience. They route through a pooled audio director
+  with 2D/3D spatialization and anti-spam guards. The Linux environment has no
+  physical audio device, so verification uses signal inspection plus editor and
+  PlayMode counters rather than claiming a listening test.
+- **Meshcaster output is staged, not fabricated.** This pass includes six empty
+  import slots, curved procedural fallback bodies, a non-networking importer, and
+  exact Meshcaster prompts/settings in `Docs/MeshcasterArtPass.md`. No paid
+  generation was run by the agent; use the documented human Preview/Approve flow
+  under the hard 500-credit cap, then copy approved prefabs/FBX files into the
+  slots. The procedural fallback remains playable until then.
 - **Not visually inspected in a running window.** Development was entirely
   headless — no display was available. Geometry, lighting, materials and HUD
   layout are verified by construction (dimension checks, nav bakes, reference

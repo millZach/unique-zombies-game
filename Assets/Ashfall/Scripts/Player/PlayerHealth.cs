@@ -126,6 +126,7 @@ namespace Ashfall.Player
                 TimeSinceDamage = 0f;
 
                 _cameraRig?.AddTrauma(1f);
+                Audio.AudioDirector.Instance?.Play2D(Audio.AudioCue.PlayerLastStand);
                 LastStandSaved?.Invoke();
                 HealthChanged?.Invoke(_health, maxHealth);
                 Damaged?.Invoke(info);
@@ -139,11 +140,17 @@ namespace Ashfall.Player
 
             _cameraRig?.AddTrauma(Mathf.Clamp01(amount / 40f) * damageTrauma);
 
+            // Louder the harder the hit, so a brute's swing and a shambler's
+            // swipe are distinguishable without looking at the health bar.
+            Audio.AudioDirector.Instance?.Play2D(
+                Audio.AudioCue.PlayerHurt, Mathf.Lerp(0.6f, 1f, Mathf.Clamp01(amount / 55f)));
+
             Damaged?.Invoke(info);
             HealthChanged?.Invoke(_health, maxHealth);
 
             if (_health <= 0f)
             {
+                Audio.AudioDirector.Instance?.Play2D(Audio.AudioCue.PlayerDown);
                 Died?.Invoke();
             }
 

@@ -343,6 +343,12 @@ namespace Ashfall.Enemies
                 AliveCountChanged?.Invoke(_live.Count);
             }
 
+            EnemyArchetype archetype = brain.Definition != null
+                ? brain.Definition.archetype
+                : EnemyArchetype.Shambler;
+            Audio.AudioDirector.Instance?.PlayAt(
+                Audio.AudioCues.DeathFor(archetype), brain.transform.position + Vector3.up);
+
             EnemyKilled?.Invoke(brain, killer);
         }
 

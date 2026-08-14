@@ -144,6 +144,7 @@ namespace Ashfall.World
                 return false;
             }
 
+            Audio.AudioDirector.Instance?.PlayAt(Audio.AudioCue.PurchaseWeapon, transform.position);
             Purchased?.Invoke(this, wasRefill);
             return true;
         }

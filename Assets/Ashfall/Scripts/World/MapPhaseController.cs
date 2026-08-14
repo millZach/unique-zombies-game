@@ -308,7 +308,27 @@ namespace Ashfall.World
                 _atmosphereTimer = 0f;
             }
 
+            // The storm bed joins the rain, the lights and the fog rather than
+            // being a separate thing that happens to be playing.
+            Audio.AudioDirector.Instance?.SetStormIntensity(StormIntensityFor(target));
+
             PhaseChanged?.Invoke(phase);
+        }
+
+        /// <summary>
+        /// Weather severity as a 0..1 dial, taken from wind rather than rain:
+        /// rain is a particle count that also tracks how much of the map is
+        /// under cover, while wind is the phase's own idea of how bad it is.
+        /// The floor keeps a distant rumble audible even on a calm night.
+        /// </summary>
+        public static float StormIntensityFor(PhaseAtmosphere atmosphere)
+        {
+            if (atmosphere == null)
+            {
+                return 0f;
+            }
+
+            return 0.12f + 0.88f * Mathf.InverseLerp(0.30f, 1.85f, atmosphere.windStrength);
         }
 
         private PhaseAtmosphere CaptureCurrentAtmosphere()

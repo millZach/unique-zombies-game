@@ -85,3 +85,13 @@ Thumbs.db
 
 # Mono crash dumps (a headless player run with -nographics leaves these)
 mono_crash.*
+
+# ---------------------------------------------------------------------------
+# Meshcaster: credentials and plugin working files must never land here.
+# Approved *art* under Assets/Ashfall/Art/Meshcaster/ is game content and is
+# committed on purpose; these patterns block everything else.
+# ---------------------------------------------------------------------------
+MeshcasterSettings.json
+meshy_config.json
+/[Aa]ssets/Meshcaster/
+**/UserSettings/Meshcaster/

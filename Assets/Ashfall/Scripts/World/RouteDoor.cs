@@ -154,6 +154,7 @@ namespace Ashfall.World
             }
 
             ApplySignColor(unlockedColor);
+            Audio.AudioDirector.Instance?.PlayAt(Audio.AudioCue.PurchaseRoute, transform.position);
             Opened?.Invoke(this);
         }
 
