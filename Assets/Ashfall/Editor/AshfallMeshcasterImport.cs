@@ -126,11 +126,17 @@ namespace Ashfall.EditorTools
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// The approved model for a slot, or null.
+        /// The approved *static* model for a slot, or null.
         ///
         /// A prefab wins over a raw model: Meshcaster's own output is a prefab
         /// with its URP material already built, and re-deriving that from the
         /// FBX would throw away the textures it paid for.
+        ///
+        /// The slot's <c>Rigged/</c> sub-folder is skipped. What lands there is
+        /// this repository's own Blender output, not the approved delivery, and
+        /// letting it answer here would make the rigged FBX compete with the
+        /// mesh it was built from. <see cref="AshfallZombieRig"/> owns that
+        /// folder.
         /// </summary>
         public static GameObject FindApprovedModel(string key)
         {
@@ -139,6 +145,8 @@ namespace Ashfall.EditorTools
             {
                 return null;
             }
+
+            string riggedPrefix = $"{folder}/{AshfallZombieRig.RiggedSubfolder}/";
 
             foreach (string filter in new[] { "t:Prefab", "t:Model" })
             {
@@ -153,10 +161,19 @@ namespace Ashfall.EditorTools
                 System.Array.Sort(guids, (a, b) => string.CompareOrdinal(
                     AssetDatabase.GUIDToAssetPath(a), AssetDatabase.GUIDToAssetPath(b)));
 
-                var asset = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guids[0]));
-                if (asset != null)
+                for (int i = 0; i < guids.Length; i++)
                 {
-                    return asset;
+                    string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                    if (path.StartsWith(riggedPrefix, System.StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    if (asset != null)
+                    {
+                        return asset;
+                    }
                 }
             }
 
@@ -221,7 +238,7 @@ namespace Ashfall.EditorTools
             // truth on disk, but the game prefab owns its own copy.
             PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
 
-            FitToTarget(instance, slot);
+            FitToSlot(instance, slot);
 
             var found = new List<Renderer>();
             instance.GetComponentsInChildren(true, found);
@@ -247,7 +264,7 @@ namespace Ashfall.EditorTools
         /// to" is not "exactly", and a brute that arrives 8% short is a brute
         /// whose head is inside its own head hitbox.
         /// </summary>
-        private static void FitToTarget(GameObject instance, Slot slot)
+        public static void FitToSlot(GameObject instance, Slot slot)
         {
             Bounds bounds = LocalBounds(instance);
             if (bounds.size.sqrMagnitude < 1e-8f)
@@ -385,6 +402,9 @@ namespace Ashfall.EditorTools
                           (staged == 0
                               ? "All slots fall back to the procedural bodies in this repository."
                               : "Run Ashfall > Build Playable Scene to adopt them."));
+
+            AshfallZombieRig.AppendStatus(sb);
+
             sb.Append("  No credits are spent by this tool. Generation happens in the Meshcaster window, " +
                       "behind its own priced approval click.");
             return sb.ToString();
@@ -426,6 +446,19 @@ namespace Ashfall.EditorTools
 
             sb.AppendLine();
             sb.AppendLine("Empty folders are fine: every slot falls back to the procedural body.");
+            sb.AppendLine();
+            sb.AppendLine("## Rigging the three enemies");
+            sb.AppendLine();
+            sb.AppendLine("Enemy slots take one more step, which spends nothing:");
+            sb.AppendLine();
+            sb.AppendLine("1. `Ashfall > Meshcaster: Export Slot Source for Blender`");
+            sb.AppendLine("2. `blender --background --python Tools/Blender/rig_zombie.py -- --all`");
+            sb.AppendLine("3. `Ashfall > Meshcaster: Adopt Rigged Zombies`");
+            sb.AppendLine("4. `Ashfall > Build Playable Scene`");
+            sb.AppendLine();
+            sb.AppendLine("Step 2 writes `<slot>/Rigged/`. Nothing else may be put in that folder --");
+            sb.AppendLine("it is generated, and the static-mesh importer deliberately ignores it.");
+            sb.AppendLine();
             sb.AppendLine("Prompts, import settings and the credit ledger are in `Docs/MeshcasterArtPass.md`.");
             return sb.ToString();
         }

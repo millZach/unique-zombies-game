@@ -399,9 +399,19 @@ namespace Ashfall.EditorTools
             var proceduralRenderers = new List<Renderer>();
             bodyBuilder(procedural.transform, definition, proceduralRenderers);
 
+            // Three bodies, in descending order of how much work someone has
+            // already done: a rig-verified animated model, then the static
+            // approved mesh, then the procedural body that ships in this
+            // repository. Each step down is silent and complete -- there is no
+            // state where an enemy has half a body.
+            string meshcasterKey = AshfallMeshcasterImport.KeyForArchetype(definition.archetype);
             var renderers = new List<Renderer>();
-            GameObject imported = AshfallMeshcasterImport.TryAttach(
-                visual.transform, AshfallMeshcasterImport.KeyForArchetype(definition.archetype), renderers);
+
+            GameObject imported = AshfallZombieRig.TryAttachRigged(
+                visual.transform, meshcasterKey, renderers, out Animator animator);
+            bool rigged = imported != null;
+
+            imported ??= AshfallMeshcasterImport.TryAttach(visual.transform, meshcasterKey, renderers);
 
             if (imported != null)
             {
@@ -456,6 +466,14 @@ namespace Ashfall.EditorTools
             agentSerialized.FindProperty("wallProbeDistance").floatValue = definition.bodyRadius * 2.4f + 0.4f;
             agentSerialized.FindProperty("arriveRadius").floatValue = definition.attackRange * 0.75f;
             agentSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // Added last, so it can find the brain, health and agent it drives.
+            // Only ever added when a rigged body is actually present: with no
+            // approved art the prefab is byte-identical to what shipped before.
+            if (rigged)
+            {
+                AshfallZombieRig.AttachBridge(root, animator);
+            }
 
             return AshfallAssetUtility.SavePrefab(root, $"{AshfallAssetUtility.PrefabFolder}/{root.name}.prefab");
         }

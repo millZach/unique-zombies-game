@@ -66,6 +66,18 @@ namespace Ashfall.Enemies
         public EnemyHealth Health => _health;
         public bool IsActive => _state != EnemyState.Dead && isActiveAndEnabled;
 
+        /// <summary>
+        /// Whether the bob-and-lean gait on <see cref="visualRoot"/> runs.
+        ///
+        /// A rigged Meshcaster body animates its own limbs, and the bob on top
+        /// of a walk cycle reads as a limp in a bouncing castle. <see
+        /// cref="ZombieAnimator"/> turns this off when it takes over and turns
+        /// it back on if it cannot. Not serialised: the default is on, and the
+        /// only thing that ever changes it is a component that proved it has a
+        /// working controller.
+        /// </summary>
+        public bool ProceduralGaitEnabled { get; set; } = true;
+
         private void Awake()
         {
             _agent = GetComponent<SteeringAgent>();
@@ -120,6 +132,11 @@ namespace Ashfall.Enemies
             {
                 visualRoot.localScale = Vector3.one;
                 visualRoot.localPosition = _visualRest;
+
+                // The gait leans the visual root and nothing else put it back,
+                // so a recycled body used to come out of the pool still tipped
+                // over from its last life.
+                visualRoot.localRotation = Quaternion.identity;
             }
         }
 
@@ -414,7 +431,7 @@ namespace Ashfall.Enemies
 
         private void TickGait(float dt)
         {
-            if (visualRoot == null)
+            if (visualRoot == null || !ProceduralGaitEnabled)
             {
                 return;
             }

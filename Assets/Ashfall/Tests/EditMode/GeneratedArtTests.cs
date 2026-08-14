@@ -364,7 +364,11 @@ namespace Ashfall.Tests
 
                 string key = AshfallMeshcasterImport.KeyForArchetype(
                     Load<EnemyDefinition>(DataFolder, definitionName).archetype);
-                bool staged = AshfallMeshcasterImport.HasApprovedModel(key);
+
+                // Either kind of adopted art hides the procedural body: a rigged
+                // model wins over a static one, and a static one over neither.
+                bool rigged = AshfallZombieRig.IsRigVerified(key);
+                bool staged = rigged || AshfallMeshcasterImport.HasApprovedModel(key);
 
                 Assert.AreEqual(!staged, procedural.gameObject.activeSelf,
                     staged
@@ -375,6 +379,15 @@ namespace Ashfall.Tests
                 {
                     Assert.IsNull(visual.Find("MeshcasterBody"),
                         $"{prefabName} has a Meshcaster body with nothing staged.");
+                    Assert.IsNull(visual.Find("MeshcasterRiggedBody"),
+                        $"{prefabName} has a rigged body with nothing staged.");
+                }
+                else if (rigged)
+                {
+                    Assert.IsNotNull(visual.Find("MeshcasterRiggedBody"),
+                        $"{prefabName} is rig-verified but shows no rigged body.");
+                    Assert.IsNotNull(go.GetComponent<ZombieAnimator>(),
+                        $"{prefabName} has a rigged body and no bridge to drive it.");
                 }
             }
         }
@@ -388,17 +401,31 @@ namespace Ashfall.Tests
             var bounds = new Bounds();
             bool started = false;
 
+            // MeshFilters and skins both, because an adopted Meshcaster rig is a
+            // SkinnedMeshRenderer with no filter beside it -- measuring only
+            // filters reported a rigged enemy as zero metres tall.
+            var parts = new List<(Mesh mesh, Transform transform)>();
             foreach (MeshFilter filter in prefab.GetComponentsInChildren<MeshFilter>(true))
+            {
+                parts.Add((filter.sharedMesh, filter.transform));
+            }
+
+            foreach (SkinnedMeshRenderer skin in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                parts.Add((skin.sharedMesh, skin.transform));
+            }
+
+            foreach ((Mesh mesh, Transform node) in parts)
             {
                 // activeInHierarchy is always false on a prefab asset, so the
                 // disabled-branch check has to walk the chain by hand.
-                if (filter.sharedMesh == null || !IsActiveUnder(filter.transform, prefab.transform))
+                if (mesh == null || !IsActiveUnder(node, prefab.transform))
                 {
                     continue;
                 }
 
-                Bounds local = filter.sharedMesh.bounds;
-                Matrix4x4 toRoot = prefab.transform.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+                Bounds local = mesh.bounds;
+                Matrix4x4 toRoot = prefab.transform.worldToLocalMatrix * node.localToWorldMatrix;
 
                 for (int c = 0; c < 8; c++)
                 {

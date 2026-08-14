@@ -95,3 +95,6 @@ MeshcasterSettings.json
 meshy_config.json
 /[Aa]ssets/Meshcaster/
 **/UserSettings/Meshcaster/
+
+# Slot meshes exported out of Unity for the rigging script. Derived, not source.
+/Tools/Blender/Input/

@@ -10,10 +10,52 @@ dimensions, where the files go, and what it costs.
 > generated, approved and copied in. Every credit is spent by a person clicking
 > a button in the Meshcaster window that shows the price first.
 
-**Status right now: 0 of 6 slots staged.** No generation has been run. The game
-currently ships the procedural bodies built by `AshfallPrefabFactory`, which
-were rebuilt from scratch in this pass (lofted, curved-spine bodies rather than
-stacked boxes). The Meshcaster slots are wired, tested and empty.
+**Status right now: 0 of 6 slots staged, 0 of 3 zombies rigged.** No generation
+has been run and no credits have been spent. The game currently ships the
+procedural bodies built by `AshfallPrefabFactory`, which were rebuilt from
+scratch in this pass (lofted, curved-spine bodies rather than stacked boxes).
+The Meshcaster slots are wired, tested and empty.
+
+Check it yourself, at any time, without spending anything:
+
+```bash
+UNITY=/home/zach/Unity/Hub/Editor/6000.5.7f1/Editor/Unity
+$UNITY -batchmode -nographics -projectPath "$PWD" \
+  -executeMethod Ashfall.EditorTools.AshfallMeshcasterImport.ReportFromCommandLine \
+  -logFile /tmp/ashfall-meshcaster.log
+grep -A 14 MESHCASTER_ART_PASS_STATUS /tmp/ashfall-meshcaster.log
+```
+
+---
+
+## The whole route, end to end
+
+There are two halves. The first spends money and only a human may run it. The
+second is free, scriptable, and already built.
+
+```
+  YOU, in the Meshcaster window                    THE REPOSITORY
+  ──────────────────────────                       ──────────────
+  1  prompt ──► Generate  (20 cr, priced)
+  2  look at the preview  (Discard is free)
+  3  Approve              (11 cr, priced)
+  4  copy the output folder into ──────────────►  Assets/Ashfall/Art/Meshcaster/<slot>/
+                                                          │
+                                    5  Ashfall ▸ Meshcaster: Export Slot Source for Blender
+                                                          │   writes Tools/Blender/Input/<slot>/<slot>.obj
+                                                          ▼
+                                    6  blender --background --python Tools/Blender/rig_zombie.py -- --all
+                                                          │   writes <slot>/Rigged/<slot>_Rigged.fbx + manifest
+                                                          ▼
+                                    7  Ashfall ▸ Meshcaster: Adopt Rigged Zombies
+                                                          │   Generic rig, loop flags, Animator Controller
+                                                          ▼
+                                    8  Ashfall ▸ Build Playable Scene
+                                                              rigged body in, procedural body off
+```
+
+Steps 5–8 spend nothing and can be re-run as often as you like. Weapons stop at
+step 4: they are static meshes and are not rigged.
 
 ---
 
@@ -43,18 +85,59 @@ previews you look at and throw away, which is the only cheap iteration loop
 available — **Discard costs nothing**, and it is the correct response to a
 preview whose proportions are wrong.
 
+### Price checkpoints
+
+Three moments in the pass are worth stopping at. They are placed where the next
+click is the expensive one, not after it.
+
+| Checkpoint | When | Spent so far | What to confirm before continuing |
+| --- | --- | --- | --- |
+| **A — after the first preview** | One Generate, one look | 20 | The style clause landed. If the first preview is not recognisably this game's palette and material language, fix the prompt now; the other five inherit the same clause. |
+| **B — after the first full asset** | First Approve completes | 31 | It imported, fitted its target size, and looks right in `Build Playable Scene`. This is the cheapest possible proof that the whole route works. |
+| **C — after all six previews** | Six Generates, none approved | 120 | Six previews you would pay to refine. Any you would not, discard and re-roll here — before you have spent a single refine credit. |
+| **Cap** | Any time | 500 | Hard stop. |
+
+Checkpoint C is the one that saves money: **Discard is free**, and discarding at
+120 credits costs nothing beyond the previews you already have.
+
 ### Ledger
 
 Fill this in as you go. The numbers are the truth of what was spent; do not
-reconstruct them from memory later.
+reconstruct them from memory later. The plan rows are pre-filled; add a row per
+actual click and keep the running total honest.
 
-| Date | Slot | Step | Credits | Running total | Outcome |
-| --- | --- | --- | --- | --- | --- |
-| | | | | | |
+| # | Date | Slot | Step | Credits | Running total | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| — | — | — | *(nothing spent yet)* | 0 | **0** | 6 slots pending |
+| 1 | | Meridian Sidearm | Preview | 20 | 20 | |
+| 2 | | Meridian Sidearm | Approve (refine + resize) | 11 | 31 | ← checkpoint B |
+| 3 | | Breakwater Shotgun | Preview | 20 | 51 | |
+| 4 | | Breakwater Shotgun | Approve | 11 | 62 | |
+| 5 | | Arc-9 Rifle | Preview | 20 | 82 | |
+| 6 | | Arc-9 Rifle | Approve | 11 | 93 | |
+| 7 | | Shambler | Preview | 20 | 113 | |
+| 8 | | Shambler | Approve | 11 | 124 | |
+| 9 | | Sprinter | Preview | 20 | 144 | |
+| 10 | | Sprinter | Approve | 11 | 155 | |
+| 11 | | Storm Brute | Preview | 20 | 175 | |
+| 12 | | Storm Brute | Approve | 11 | **186** | planned spend complete |
+| | | | *re-rolls below this line* | | | |
 
-Running total must never exceed **500**. If a slot needs more than three
-previews, stop and keep the procedural body — it is a working fallback, not a
-placeholder.
+**Planned spend: 186. Cap: 500. Headroom: 314.**
+
+Re-roll accounting, so a bad run cannot creep past the cap without you noticing:
+
+| Running total | You have room for |
+| --- | --- |
+| ≤ 186 | everything below |
+| ≤ 300 | 5 more previews *and* 3 more approves |
+| ≤ 400 | 4 more previews, or 2 previews + 2 approves |
+| ≤ 460 | 2 more previews |
+| ≤ 489 | 1 more preview — and nothing after it |
+| > 489 | **stop.** A preview you cannot afford to approve is 20 credits of nothing. |
+
+If a slot needs more than three previews, stop and keep the procedural body —
+it is a working fallback, not a placeholder.
 
 ---
 
@@ -62,12 +145,41 @@ placeholder.
 
 1. Open the Meshcaster project at `../meshcaster/unity` in Unity **6000.5.7f1**.
 2. **Tools → Meshcaster**. Confirm the API-key status line is green.
-3. Check the credit balance shown in the window against your cap.
+3. Check the credit balance shown in the window against your cap. Write the
+   opening balance at the top of the ledger; the ledger's running total and the
+   window's balance should move together, and if they do not, stop.
 4. Use the **Single** tab. Batch auto-approval is explicitly *not* wanted here:
-   auto-approve refines every preview the moment it finishes, which is the one
-   setting that can spend past a budget without a second click.
+   auto-approve refines every successful preview the moment it finishes, which
+   is the one setting that can spend past a budget without a second click.
 
 Leave **approval policy on Manual** for this entire pass.
+
+### The clicks, exactly
+
+Per slot, in the Single tab:
+
+| # | Control | What to set | Price shown |
+| --- | --- | --- | --- |
+| 1 | Input | **Text prompt** (or Image; see below) | — |
+| 2 | Prompt field | paste the slot's prompt from this document, whole | — |
+| 3 | Delivered polycount | **8000** enemies, **6000** weapons | — |
+| 4 | Height (m) | the slot's number from the table below | — |
+| 5 | Collider | **Off** | — |
+| 6 | Approval policy | **Manual** | — |
+| 7 | **Generate** | read the price, then click | **20** |
+| 8 | wait | Preview lands at *Awaiting Approval* | — |
+| 9 | judge it | the five checks further down | — |
+| 10a | **Discard** | if it fails any check | **0** |
+| 10b | **Approve** | read the price, then click | **11** |
+| 11 | wait | Refine → Resize → download → prefab | — |
+
+Then copy the finished folder into this repository and carry on with steps 5–8
+of the route at the top of this document.
+
+> **No script, agent or automation in either repository may perform steps 7 or
+> 10b.** They are the only steps that spend money, and the whole design of both
+> projects is that a person sees the price and clicks. Everything downstream of
+> the copy in step 4 is automated and free.
 
 ---
 
@@ -319,14 +431,152 @@ Discard is free. Use it.
 
 ---
 
+## Rigging and animating the three zombies
+
+Meshy returns a static mesh with no bones. This repository builds the rig
+itself, in Blender, from the approved mesh — free, repeatable, and offline.
+
+```bash
+# 5. Unity: get the approved geometry out where Blender can read it.
+#    Menu:  Ashfall ▸ Meshcaster: Export Slot Source for Blender
+#    Headless:
+$UNITY -batchmode -nographics -projectPath "$PWD" \
+  -executeMethod Ashfall.EditorTools.AshfallZombieRig.ExportSlotSourcesFromCommandLine \
+  -logFile /tmp/ashfall-slot-source.log
+
+# 6. Blender: rig, skin, animate, export. Add --check first to see what it found.
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- --check
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- --all
+
+# 7. Unity: import settings, loop flags, Animator Controller.
+#    Menu:  Ashfall ▸ Meshcaster: Adopt Rigged Zombies
+$UNITY -batchmode -nographics -projectPath "$PWD" \
+  -executeMethod Ashfall.EditorTools.AshfallZombieRig.AdoptRiggedFromCommandLine \
+  -logFile /tmp/ashfall-adopt.log
+
+# 8. Unity: rebuild the prefabs and the scene.
+$UNITY -batchmode -nographics -projectPath "$PWD" \
+  -executeMethod Ashfall.EditorTools.AshfallProjectBuilder.BuildFromCommandLine \
+  -logFile /tmp/ashfall-build.log
+```
+
+If a slot has no approved mesh, step 6 says so and exits non-zero for that slot.
+It never invents a rig.
+
+### What the rig is
+
+22 bones, fitted to each model's own measured proportions:
+
+```
+Root ─ Pelvis ─ Spine ─ Chest ─ Neck ─ Head
+                  │        └─ Shoulder.L/R ─ UpperArm ─ LowerArm ─ Hand
+                  └─ UpperLeg.L/R ─ LowerLeg ─ Foot ─ Toe
+```
+
+Skinning tries Blender's automatic (bone heat) weights first and checks the
+result. Generated meshes are frequently not manifold — loose parts, interior
+shells, zero-area faces — and heat weighting fails on exactly those. When more
+than 2% of vertices come back unbound, a deterministic inverse-distance envelope
+takes over: four influences per vertex, weighted by distance to the bone
+segment. Which one ran is recorded in the manifest, so you never have to guess.
+
+### The five clips
+
+Authored from bone keyframes in `rig_zombie.py`, from this project's own curves.
+No motion data is copied from anywhere.
+
+| Clip | Frames @ 30 fps | Loops | Reads as |
+| --- | --- | --- | --- |
+| `Idle` | 60 (2.0 s) | yes | breathing, slow weight shift |
+| `Walk` | 40 (1.33 s) | yes | one full gait cycle, arms counter-swinging |
+| `Attack` | 30 (1.0 s) | no | windup to frame 11, swing lands frame 17 |
+| `HitReact` | 18 (0.6 s) | no | spine-and-head snap back, then settle |
+| `Death` | 45 (1.5 s) | no | knees buckle, fold forward, land low |
+
+Per-archetype character comes from one number, `LEAN` — the resting forward
+hunch, 26° shambler, 34° sprinter, 8° brute — which every clip is written
+against. That is what makes a shambler's walk read differently from a
+sprinter's without three separate sets of curves.
+
+**No root motion.** The `CharacterController` owns position; a clip that also
+moved the body would double every step and slide the feet. Root translation is
+locked at export and again at import.
+
+### How it reaches the game
+
+`ZombieAnimator` on the enemy root cross-fades to states from `EnemyBrain.State`
+and `EnemyHealth`:
+
+| Brain state | Clip |
+| --- | --- |
+| dead or dying | `Death` |
+| `AttackWindup`, `AttackRecover`, `TearBarricade` | `Attack` |
+| `Stagger`, or a recent hit | `HitReact` |
+| `Chase` while moving | `Walk` |
+| anything else | `Idle` |
+
+An attack outranks a flinch, matching the brain: a hit past the halfway point of
+a windup does not cancel the swing, so it must not cancel the animation either.
+
+When the bridge takes over it turns off `EnemyBrain.ProceduralGaitEnabled` and
+`EnemyHealth.ProceduralDeathCollapse`, and retimes the death collapse to the
+death clip's own length so the pool does not recycle a body mid-fall. Everything
+else — hit flash, hitboxes, salvage, the alive count, pooling — is untouched.
+
+If anything is missing it degrades one step at a time: no `Walk` → `Idle`, no
+`Idle` → the procedural gait comes back. There is no state in which an enemy
+stands in a T-pose.
+
+### When it will not verify
+
+A slot is adopted only when *all* of this holds. `Adopt Rigged Zombies` prints
+the reason when it does not:
+
+| Reason | Fix |
+| --- | --- |
+| `no rig manifest` | Step 6 has not run for this slot. |
+| `manifest is a self-test proxy` | `--self-test` output was copied into a real slot. Delete it. |
+| `imported model has no SkinnedMeshRenderer` | The FBX exported without the skin; check step 6's log for the weighting line. |
+| `imported model has no valid avatar` | Unity could not build a Generic avatar; the FBX has no armature. |
+| `clip '<name>' is missing` | An action did not survive the FBX. Re-run step 6. |
+
+### If the model comes in wrong
+
+| Symptom | Flag |
+| --- | --- |
+| script refuses: "not standing up in Blender's Z-up space" | re-export upright, or `--force` to rig it lying down anyway |
+| enemy walks backwards | `--yaw 180` |
+| enemy faces sideways | `--yaw 90` or `--yaw -90` |
+| want to see the rig by hand | `--blend`, then open the `.blend` beside the FBX |
+
+Exercise the whole pipeline with no paid asset at all:
+
+```bash
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- \
+  --self-test --all --output /tmp/ashfall-rig-selftest
+```
+
+That builds a blocky proxy humanoid, rigs it, animates it and exports it. Its
+manifest is stamped `"selfTest": true` and `AshfallZombieRig` refuses to ship
+it, so it can never be mistaken for approved art. It also refuses to write into
+the staging folders at all without an explicit `--output`.
+
+---
+
 ## Known limitations of this integration
 
 Stated plainly, because the alternative is discovering them at round 6.
 
-- **No skinning, no animation.** Meshy returns a static mesh. Enemy motion in
-  this game is procedural — gait bob, lean, attack windup, death collapse — and
-  it drives the visual root, so an imported model gets all of it. What it does
-  not get is limb articulation, because there are no bones to articulate.
+- **The rig is generic, not authored.** 22 bones placed from a proportion table
+  and the model's measured widths. It will look right on a humanoid and wrong on
+  something that is not one — a sprinter with true digitigrade legs gets a
+  human's knee placement, because that is what the table knows. Judge the walk
+  cycle before you judge the mesh.
+- **Envelope weights are the likely path, not the exception.** Meshy geometry
+  usually fails bone-heat weighting. Envelope weights are smoother and less
+  anatomically sharp; at the distance and fog this game shows enemies at, that
+  has not been the readable difference. Up close it will be.
+- **Weapons are not rigged.** Three static meshes, by design.
 - **Weapon sub-part animation is lost.** The slide-cycle and magazine-drop
   animate named child transforms. An imported model is one mesh, so those
   transforms stay alive but hidden and drive nothing visible. The reload tilt
@@ -351,4 +601,11 @@ Stated plainly, because the alternative is discovering them at round 6.
   credentials. Never read, copy, print or commit them. `.gitignore` in this
   repository blocks both filenames defensively.
 - No generation without a human looking at the price first.
+- No agent, script, cron job or CI step may click **Generate**, **Approve**,
+  **Refine**, **Retry** or **Regenerate**. Approval of a budget is not approval
+  of a click. If the Unity GUI is unavailable, the correct outcome is prepared
+  jobs and an unspent balance, not a workaround.
 - Do not exceed **500 credits** for this pass.
+- Never describe a slot as generated, rigged or animated unless the file is on
+  disk and a command in this document printed it. `Meshcaster Art Pass Status`
+  and `Adopt Rigged Zombies` are the two things that count as evidence.

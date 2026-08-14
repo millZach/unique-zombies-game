@@ -67,6 +67,32 @@ namespace Ashfall.Enemies
         /// <summary>Damage from the last hit, for stagger decisions in the brain.</summary>
         public float LastHitAmount { get; private set; }
 
+        /// <summary>
+        /// Whether death squashes and sinks <see cref="visualRoot"/>.
+        ///
+        /// A rigged body has a Death clip that collapses it properly; squashing
+        /// the root as well would flatten the animation into a puddle. <see
+        /// cref="ZombieAnimator"/> turns this off only when it has a Death state
+        /// to play. The dissolve tint, the collider disable, the timer and
+        /// <see cref="DeathFinished"/> are unaffected either way, so pooling and
+        /// the round's alive count behave identically.
+        /// </summary>
+        public bool ProceduralDeathCollapse { get; set; } = true;
+
+        /// <summary>
+        /// Retimes the death presentation, in seconds.
+        ///
+        /// The pool recycles a corpse when this elapses. A rigged death clip is
+        /// longer than the default squash, and recycling a body halfway through
+        /// its collapse is the most visible bug an art pass can introduce.
+        /// </summary>
+        public void SetDeathCollapseSeconds(float seconds)
+        {
+            // NaN survives Mathf.Clamp, and a NaN timer never reaches 1, so the
+            // body would sit in the pool as a permanent corpse.
+            deathCollapseSeconds = float.IsNaN(seconds) ? 0.85f : Mathf.Clamp(seconds, 0.05f, 4f);
+        }
+
         private void Awake()
         {
             _block = new MaterialPropertyBlock();
@@ -223,7 +249,7 @@ namespace Ashfall.Enemies
             _deathTimer += deltaTime;
             float t = Mathf.Clamp01(_deathTimer / Mathf.Max(0.05f, deathCollapseSeconds));
 
-            if (visualRoot != null)
+            if (visualRoot != null && ProceduralDeathCollapse)
             {
                 // Squash down and sink: reads clearly at distance and never leaves a
                 // body standing where the player expects a clear lane.

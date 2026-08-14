@@ -1,10 +1,18 @@
 # Ashfall: Black Meridian — Blender source assets
 
-`generate_assets.py` builds the game's original source-art library from scratch
-inside Blender and exports it in formats Unity can import directly.
+Two scripts, both headless, both deterministic:
 
-Everything is modelled procedurally from primitives with procedural materials.
-Nothing is downloaded, scanned, traced, or derived from another game's content.
+| Script | What it does |
+| --- | --- |
+| `generate_assets.py` | Builds the game's original source-art library from scratch and exports it for Unity. |
+| `rig_zombie.py` | Rigs, skins and animates an **approved Meshcaster** zombie mesh, and exports a Unity-ready FBX. |
+
+Everything in `generate_assets.py` is modelled procedurally from primitives with
+procedural materials. Nothing is downloaded, scanned, traced, or derived from
+another game's content. `rig_zombie.py` authors its five clips from bone
+keyframes written in the script; no motion data is copied from anywhere.
+
+Neither script talks to a network, and neither can spend a credit.
 
 ---
 
@@ -163,9 +171,111 @@ assets, add a bound — a silent geometry collapse is otherwise invisible.
 - **No UV unwrapping.** Meshes ship without UV maps; the in-engine kit generates
   world-scale UVs in C# instead. Add a `smart_project` pass if you need to
   texture these outside Unity.
-- **No rigs or animation.** The enemies are static silhouettes. All enemy motion
-  in the game is procedural (gait bob, lean, attack windup) and driven from code.
+- **No rigs or animation.** These enemies are static silhouettes and motion for
+  them is procedural (gait bob, lean, attack windup), driven from code. Rigging
+  is a separate concern handled by `rig_zombie.py` below, and it operates on
+  approved Meshcaster meshes, not on these.
 - **No LODs or lightmap UVs.** At ~4,000 triangles for the entire library this
   has not been necessary.
 - **Materials do not survive FBX.** Only slot names transfer. This is a format
   limitation, not a bug.
+
+---
+
+## `rig_zombie.py` — rigging an approved zombie
+
+Meshy returns a static mesh. This turns one into a skinned, animated,
+Unity-ready character.
+
+```bash
+# what is there to rig? writes nothing.
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- --check
+
+# rig every enemy slot that has an approved mesh
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- --all
+
+# one slot, from an arbitrary file
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- \
+  --slot Enemy_StormBrute --input /path/to/brute.glb
+
+# exercise the whole pipeline with no paid asset at all
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- \
+  --self-test --all --output /tmp/ashfall-rig-selftest
+```
+
+Exits `0` only when every requested slot was rigged and exported. A slot with no
+importable mesh is a failure, printed with the paths it looked in — the script
+will not invent a rig for a slot that has no art.
+
+### Where files come from and go
+
+| | Path |
+| --- | --- |
+| input, default | `Tools/Blender/Input/<slot>/` (git-ignored; written by `Ashfall ▸ Meshcaster: Export Slot Source for Blender`) |
+| input, alternate | `Assets/Ashfall/Art/Meshcaster/<slot>/Source/` |
+| output, default | `Assets/Ashfall/Art/Meshcaster/<slot>/Rigged/` |
+
+Accepted formats, in preference order: `.fbx`, `.glb`, `.gltf`, `.obj`. Two
+files in one slot resolve by sorted path, never by directory order, so two
+machines produce the same result.
+
+### What it does, in order
+
+1. **Import** — whichever operator this Blender build accepts, falling back
+   through signatures.
+2. **Consolidate** — apply transforms, join to one mesh object, keep every
+   material slot.
+3. **Normalise** — scale to the slot's exact target height, centre on X and Y,
+   sit the origin on the floor. Refuses to continue if the model is not standing
+   up in Z, unless `--force`.
+4. **Armature** — 22 bones: `Root, Pelvis, Spine, Chest, Neck, Head`, and per
+   side `Shoulder, UpperArm, LowerArm, Hand` and `UpperLeg, LowerLeg, Foot,
+   Toe`. Heights from a proportion table; widths measured off this mesh at the
+   95th percentile, then clamped to humanoid plausibility so a shambler's
+   knee-length arms cannot drag the hip joints out with them.
+5. **Skin** — automatic (bone heat) weights, then *verified*: if more than 2% of
+   vertices come back unbound, a deterministic inverse-distance envelope takes
+   over — four influences per vertex, weighted by `1/d³` to the bone segment.
+   It cannot fail on bad topology because it never looks at topology. Which path
+   ran is recorded in the manifest.
+6. **Animate** — `Idle`, `Walk`, `Attack`, `HitReact`, `Death` at 30 fps, all
+   from bone keyframes. No root translation: the `CharacterController` owns
+   position in Unity.
+7. **Export** — FBX, Y-up, `-Z` forward, one take per action, leaf bones off,
+   textures copied beside the file.
+8. **Manifest** — `<slot>_Rigged.rigmanifest.json`: bone list, clip ranges and
+   loop flags, vertex and triangle counts, weighting method, source hash,
+   Blender version. Unity reads this and refuses to adopt a rig it does not
+   fully describe.
+
+### Flags
+
+| Flag | Effect |
+| --- | --- |
+| `--slot <key>` | `Enemy_Shambler`, `Enemy_Sprinter`, `Enemy_StormBrute`. Repeatable. |
+| `--all` | Every enemy slot. Also the default with no `--slot`. |
+| `--input <path>` | A file, a slot folder, or a parent of slot folders. |
+| `--output <dir>` | Where to write. Required with `--self-test`. |
+| `--height <m>` | Override the slot's target height. |
+| `--yaw <deg>` | Rotate about Z before rigging. `180` if the enemy walks backwards. |
+| `--force` | Rig a model that is not standing upright. |
+| `--blend` | Save the `.blend` beside the FBX, to inspect the rig by hand. |
+| `--check` | Report which slots have a source. Writes nothing. |
+| `--self-test` | Build a proxy humanoid and run the full pipeline on it. |
+
+### Determinism and honesty
+
+Nothing in the script is random or time-dependent, so two runs on the same input
+produce the same rig and the same clips.
+
+`--self-test` output is stamped `"source": "self-test-proxy"`,
+`"selfTest": true`, and `AshfallZombieRig.IsManifestShippable` rejects it. The
+script also refuses to run `--self-test` without an explicit `--output`, so a
+proxy cannot be written into a staging slot where it would look like approved
+art in the Unity Project view.
+
+A rig produced from any imported file is stamped `"source": "imported-file"` —
+never "approved". The script cannot know where a mesh came from, and approval is
+a human copying it into the staging slot.
+
+Full workflow, including the Unity half: `Docs/MeshcasterArtPass.md`.

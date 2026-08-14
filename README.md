@@ -233,13 +233,16 @@ $UNITY -batchmode -nographics -projectPath "$PWD" \
   -logFile /tmp/ashfall-play-tests.log
 ```
 
-86 edit-mode tests cover round composition, the phase schedule, weapon
+100 edit-mode tests cover round composition, the phase schedule, weapon
 ammo/cadence/damage maths, A* pathfinding with gates, generated weapon/enemy
-geometry, and the pooled audio director. The 24-test play-mode suite loads the
-real scene and asserts the loop actually turns over: enemies spawn and close
-distance, kills pay salvage, routes cost money and open gates, power-ups apply
-and expire, phases change the world, restart resets everything, and each major
-gameplay/audio event reaches the audio director.
+geometry, the pooled audio director, and the rigged-zombie import contract —
+including that the Blender script and the Unity slot table agree on every target
+height, and that an empty Meshcaster slot leaves the procedural body visible.
+The 28-test play-mode suite loads the real scene and asserts the loop actually
+turns over: enemies spawn and close distance, kills pay salvage, routes cost
+money and open gates, power-ups apply and expire, phases change the world,
+restart resets everything, each major gameplay/audio event reaches the audio
+director, and an animation bridge with nothing to drive stays inert.
 
 **Blender source assets:**
 ```bash
@@ -247,6 +250,31 @@ gameplay/audio event reaches the audio director.
 ```
 24 assets, ~4,000 triangles, exported to FBX + GLB + .blend under
 `Tools/Blender/Output/` (git-ignored). See `Tools/Blender/README.md`.
+
+**Zombie rigging pipeline** — rigs, skins and animates an approved Meshcaster
+mesh. Reports and exits non-zero when a slot has no approved art; it will not
+invent a rig:
+```bash
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- --check
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- --all
+
+# exercise the whole pipeline with no paid asset present
+/snap/bin/blender --background --python Tools/Blender/rig_zombie.py -- \
+  --self-test --all --output /tmp/ashfall-rig-selftest
+```
+22 bones, five original clips (`Idle`, `Walk`, `Attack`, `HitReact`, `Death`),
+Unity-ready FBX plus a manifest the importer verifies against.
+
+**Meshcaster art-pass status** — read-only, spends nothing:
+```bash
+$UNITY -batchmode -nographics -projectPath "$PWD" \
+  -executeMethod Ashfall.EditorTools.AshfallMeshcasterImport.ReportFromCommandLine \
+  -logFile /tmp/ashfall-meshcaster.log
+
+$UNITY -batchmode -nographics -projectPath "$PWD" \
+  -executeMethod Ashfall.EditorTools.AshfallZombieRig.AdoptRiggedFromCommandLine \
+  -logFile /tmp/ashfall-adopt.log
+```
 
 **Player build:**
 ```bash
@@ -285,6 +313,7 @@ Assets/Ashfall/
 │   └── Fx/             pooled impacts, tracers, muzzle flashes
 ├── Audio/              original generated WAV clips
 ├── Art/Meshcaster/     six empty approved-output staging slots
+│                       <slot>/Rigged/ holds rig_zombie.py output
 ├── Editor/             scene builder, validation, audio/art import helpers
 ├── Tests/              EditMode and PlayMode suites
 ├── Scenes/Main.unity   the generated, committed playable scene

@@ -1,5 +1,25 @@
 # Ashfall: Black Meridian — build notes
 
+## 2026-08-14 — Two tests that only fail once the art shows up
+
+Built the zombie rigging pipeline: Blender takes an approved mesh, fits a
+22-bone humanoid to its own measured proportions, skins it, writes five clips,
+exports a Unity FBX. Wired the Unity end and it all worked first try — 100
+edit-mode and 28 play-mode tests green. Then I actually staged a rigged model
+and re-ran the suite, and two *pre-existing* tests failed. `MeasureLocal` in
+`GeneratedArtTests` only walked `MeshFilter`s, so a `SkinnedMeshRenderer` body
+measured 0.00 m tall against a 1.85 m definition. And the "procedural body is
+visible" test asked `HasApprovedModel`, which only knows about static meshes, so
+a slot with *only* a rigged model looked unstaged while its procedural body was
+correctly hidden. Neither would have fired until Zach staged his first paid
+asset, which is the worst possible time to find them. Lesson: a test that guards
+"feature X is absent" needs to be run once with X present, or it is only testing
+the empty case.
+
+Also learned that Blender 5.x removed `action.fcurves` — slotted actions moved
+the curves into `action.layers[].strips[].channelbags[].fcurves`. One helper
+that reaches through both, and the script runs on either.
+
 ## 2026-08-13 — A MonoBehaviour in the wrong file cost every head shot
 
 Spotted `The referenced script on this Behaviour (Game Object 'Hitbox_Body') is
