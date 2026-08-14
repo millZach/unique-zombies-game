@@ -792,11 +792,12 @@ namespace Ashfall.EditorTools
             {
                 var procedural = new GameObject("Procedural");
                 procedural.transform.SetParent(go.transform, false);
+                Transform hands = go.transform.Find("ViewmodelHands");
 
                 var toMove = new List<Transform>();
                 foreach (Transform child in go.transform)
                 {
-                    if (child != procedural.transform && child != muzzle)
+                    if (child != procedural.transform && child != muzzle && child != hands)
                     {
                         toMove.Add(child);
                     }
@@ -862,6 +863,86 @@ namespace Ashfall.EditorTools
             return AshfallGeometry.Loft(key, rings, segments, capStart: true, capEnd: true, tileSize: 0.25f);
         }
 
+        private static GameObject AddPrimitivePart(
+            Transform parent,
+            string name,
+            PrimitiveType primitive,
+            Material material,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale)
+        {
+            GameObject go = GameObject.CreatePrimitive(primitive);
+            go.name = name;
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPosition;
+            go.transform.localRotation = localRotation;
+            go.transform.localScale = localScale;
+
+            Collider collider = go.GetComponent<Collider>();
+            if (collider != null)
+            {
+                Object.DestroyImmediate(collider);
+            }
+
+            MeshRenderer renderer = go.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            renderer.receiveShadows = true;
+            return go;
+        }
+
+        private static GameObject AddViewmodelForearm(
+            Transform parent, string name, Vector3 from, Vector3 to, Material material)
+        {
+            float length = Vector3.Distance(from, to);
+            Vector3 direction = length > 1e-5f ? (to - from) / length : Vector3.up;
+            return AddPrimitivePart(
+                parent, name, PrimitiveType.Capsule, material,
+                (from + to) * 0.5f,
+                Quaternion.FromToRotation(Vector3.up, direction),
+                new Vector3(0.084f, Mathf.Max(length * 0.5f, 0.045f), 0.084f));
+        }
+
+        private static void AddViewmodelHands(Transform weaponRoot, Vector3 leftGrip, Vector3 rightGrip)
+        {
+            var hands = new GameObject("ViewmodelHands");
+            hands.transform.SetParent(weaponRoot, false);
+
+            Material sleeve = AshfallMaterialLibrary.GunBody;
+            Material skin = AshfallMaterialLibrary.ViewmodelSkin;
+
+            AddViewmodelForearm(hands.transform, "LeftForearm",
+                new Vector3(-0.16f, -0.52f, leftGrip.z - 0.025f), leftGrip, sleeve);
+            AddViewmodelForearm(hands.transform, "RightForearm",
+                new Vector3(0.16f, -0.52f, rightGrip.z - 0.025f), rightGrip, sleeve);
+
+            AddViewmodelHand(hands.transform, "LeftHand", leftGrip, -1f, skin);
+            AddViewmodelHand(hands.transform, "RightHand", rightGrip, 1f, skin);
+        }
+
+        private static GameObject AddViewmodelHand(
+            Transform parent, string name, Vector3 position, float side, Material material)
+        {
+            // Built-in primitives persist in prefabs without adding viewmodel
+            // shapes to the station's shared mesh asset. At arm's length the
+            // broad palm and small wrap/thumb still read as a gripping hand.
+            GameObject hand = AddPrimitivePart(
+                parent, name, PrimitiveType.Sphere, material, position,
+                Quaternion.Euler(58f, 0f, side * 10f),
+                new Vector3(0.104f, 0.140f, 0.110f));
+
+            AddPrimitivePart(hand.transform, "FingerWrap", PrimitiveType.Capsule, material,
+                new Vector3(0f, -0.018f, 0.034f), Quaternion.Euler(70f, 0f, 0f),
+                new Vector3(0.028f, 0.041f, 0.028f));
+            AddPrimitivePart(hand.transform, "Thumb", PrimitiveType.Sphere, material,
+                new Vector3(side * 0.040f, 0.005f, 0.005f),
+                Quaternion.Euler(38f, 0f, side * 34f),
+                new Vector3(0.036f, 0.068f, 0.044f));
+
+            return hand;
+        }
+
         private static GameObject BuildSidearm()
         {
             GameObject go = BeginViewModel("VM_MeridianSidearm", out Transform root);
@@ -899,6 +980,10 @@ namespace Ashfall.EditorTools
             AddPart(root, "SightRear", AshfallGeometry.Chamfer(new Vector3(0.038f, 0.013f, 0.013f), 0.003f), accentMat, new Vector3(0f, 0.086f, -0.040f));
             AddPart(root, "SightFront", AshfallGeometry.Chamfer(new Vector3(0.009f, 0.015f, 0.011f), 0.003f), accentMat, new Vector3(0f, 0.088f, 0.140f));
             AddPart(root, "AccentStripe", AshfallGeometry.Chamfer(new Vector3(0.056f, 0.007f, 0.088f), 0.002f), accentMat, new Vector3(0f, 0.030f, 0.060f));
+
+            AddViewmodelHands(root,
+                new Vector3(-0.042f, 0.095f, 0.030f),
+                new Vector3(0.050f, 0.078f, -0.060f));
 
             var muzzle = new GameObject("Muzzle").transform;
             muzzle.SetParent(root, false);
@@ -952,6 +1037,10 @@ namespace Ashfall.EditorTools
             AddPart(root, "HeatShield", AshfallGeometry.Chamfer(new Vector3(0.056f, 0.013f, 0.330f), 0.005f), rust, new Vector3(0f, 0.062f, 0.340f));
             AddPart(root, "Bead", AshfallGeometry.Ellipsoid("ShotgunBead", new Vector3(0.006f, 0.008f, 0.006f), 6, 4), accentMat, new Vector3(0f, 0.070f, 0.620f));
             AddPart(root, "AccentBand", AshfallGeometry.Chamfer(new Vector3(0.076f, 0.011f, 0.048f), 0.003f), accentMat, new Vector3(0f, 0.048f, 0.060f));
+
+            AddViewmodelHands(root,
+                new Vector3(-0.045f, 0.150f, 0.300f),
+                new Vector3(0.052f, 0.078f, -0.095f));
 
             var muzzle = new GameObject("Muzzle").transform;
             muzzle.SetParent(root, false);
@@ -1023,6 +1112,10 @@ namespace Ashfall.EditorTools
                 new(new Vector3(0f, 0.040f, 0f), 0.015f),
                 new(new Vector3(0f, 0.055f, 0f), 0.011f)
             }, 10, true, true, 0.25f), accentMat, new Vector3(-0.048f, 0.006f, 0.020f), new Vector3(90f, 0f, 0f));
+
+            AddViewmodelHands(root,
+                new Vector3(-0.045f, 0.165f, 0.330f),
+                new Vector3(0.052f, 0.078f, -0.095f));
 
             var muzzle = new GameObject("Muzzle").transform;
             muzzle.SetParent(root, false);

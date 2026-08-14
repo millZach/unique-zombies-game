@@ -1,11 +1,14 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Ashfall.Audio;
 using Ashfall.Core;
 using Ashfall.Enemies;
 using Ashfall.EditorTools;
+using Ashfall.Player;
 using Ashfall.Weapons;
 
 namespace Ashfall.Tests
@@ -213,6 +216,72 @@ namespace Ashfall.Tests
                     $"{prefabName} fell back to its root as a muzzle; the flash would sit inside the receiver.");
                 Assert.Greater(view.Muzzle.localPosition.z, 0.1f,
                     $"{prefabName}'s muzzle is not out in front of the weapon.");
+            }
+        }
+
+        [Test]
+        public void WeaponViewModelsIncludeVisibleSupportingHands()
+        {
+            foreach ((string prefabName, _, _) in Weapons)
+            {
+                var go = Load<GameObject>(PrefabFolder, prefabName);
+                Transform hands = go.transform.Find("ViewmodelHands");
+
+                Assert.IsNotNull(hands, $"{prefabName} has no ViewmodelHands hierarchy.");
+                Assert.IsNotNull(hands.Find("LeftHand"), $"{prefabName} has no left hand.");
+                Assert.IsNotNull(hands.Find("RightHand"), $"{prefabName} has no right hand.");
+                Assert.IsNotNull(hands.Find("LeftForearm"), $"{prefabName} has no left forearm.");
+                Assert.IsNotNull(hands.Find("RightForearm"), $"{prefabName} has no right forearm.");
+
+                foreach (string handName in new[] { "LeftHand", "RightHand", "LeftForearm", "RightForearm" })
+                {
+                    var renderer = hands.Find(handName).GetComponent<MeshRenderer>();
+                    Assert.IsNotNull(renderer, $"{prefabName}/{handName} has no mesh renderer.");
+                    Assert.IsNotNull(renderer.sharedMaterial, $"{prefabName}/{handName} has no hand material.");
+                }
+            }
+        }
+
+        [Test]
+        public void BreakwaterMeshcasterBodyHasExplicitForwardCorrection()
+        {
+            var go = Load<GameObject>(PrefabFolder, "VM_Breakwater");
+            Transform body = go.transform.Find("MeshcasterBody");
+
+            Assert.IsNotNull(body, "VM_Breakwater has no imported Meshcaster body.");
+            Assert.That(Mathf.Abs(Mathf.DeltaAngle(body.localEulerAngles.y, 180f)), Is.LessThan(0.5f),
+                "The Breakwater Meshcaster body must be rotated 180 degrees around Y so its muzzle faces forward.");
+        }
+
+        [Test]
+        public void WeaponSocketIsLoweredForHipAndAimVisibility()
+        {
+            Scene scene = EditorSceneManager.OpenScene("Assets/Ashfall/Scenes/Main.unity", OpenSceneMode.Additive);
+            try
+            {
+                PlayerCameraRig rig = null;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    rig = root.GetComponentInChildren<PlayerCameraRig>(true);
+                    if (rig != null)
+                    {
+                        break;
+                    }
+                }
+
+                Assert.IsNotNull(rig, "Main scene has no PlayerCameraRig.");
+                var serialized = new SerializedObject(rig);
+                Vector3 hip = serialized.FindProperty("hipPosition").vector3Value;
+                Vector3 aim = serialized.FindProperty("aimPosition").vector3Value;
+
+                Assert.LessOrEqual(hip.y, -0.26f,
+                    $"Hip weapon height {hip.y:0.###} is still high enough to crowd the sightline.");
+                Assert.LessOrEqual(aim.y, -0.14f,
+                    $"Aim weapon height {aim.y:0.###} is still high enough to block the sightline.");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
             }
         }
 

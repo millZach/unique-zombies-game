@@ -36,6 +36,7 @@ namespace Ashfall.Core
         public static readonly Color OverchargeViolet = new Color(0.702f, 0.451f, 1.000f);
         public static readonly Color LastStandGold = new Color(1.000f, 0.851f, 0.400f);
         public static readonly Color EnemyFlesh = new Color(0.318f, 0.298f, 0.290f);
+        public static readonly Color ViewmodelSkin = new Color(0.360f, 0.225f, 0.165f);
         public static readonly Color EnemyCorrupt = new Color(0.180f, 0.639f, 0.612f);
         public static readonly Color BruteArmour = new Color(0.184f, 0.169f, 0.176f);
         public static readonly Color Blood = new Color(0.361f, 0.078f, 0.098f);

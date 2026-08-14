@@ -42,8 +42,8 @@ namespace Ashfall.Player
         [SerializeField] private float bobRollDegrees = 0.6f;
 
         [Header("Weapon sway")]
-        [SerializeField] private Vector3 hipPosition = new Vector3(0.21f, -0.20f, 0.46f);
-        [SerializeField] private Vector3 aimPosition = new Vector3(0f, -0.075f, 0.36f);
+        [SerializeField] private Vector3 hipPosition = new Vector3(0.21f, -0.29f, 0.46f);
+        [SerializeField] private Vector3 aimPosition = new Vector3(0f, -0.18f, 0.36f);
         [SerializeField] private float swayAmount = 0.014f;
         [SerializeField] private float swaySpeed = 9f;
         [SerializeField] private float weaponFollowSpeed = 14f;

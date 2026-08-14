@@ -90,8 +90,11 @@ namespace Ashfall.EditorTools
             // ends in the wrong place puts the flash inside the receiver.
             new("Weapon_MeridianSidearm", "Meridian Sidearm", 0.24f, Axis.Z,
                 new Vector3(0f, 0.02f, 0.02f), Vector3.zero),
+            // The Meshcaster shotgun's source axis remains reversed after the
+            // generic centroid pass, so keep this explicit viewmodel correction
+            // at the canonical attachment point rather than hiding it in gameplay.
             new("Weapon_BreakwaterShotgun", "Breakwater Shotgun", 1.02f, Axis.Z,
-                new Vector3(0f, 0.01f, 0.15f), Vector3.zero),
+                new Vector3(0f, 0.01f, 0.15f), new Vector3(0f, 180f, 0f)),
             new("Weapon_Arc9Rifle", "Arc-9 Rifle", 1.13f, Axis.Z,
                 new Vector3(0f, 0.01f, 0.19f), Vector3.zero)
         };

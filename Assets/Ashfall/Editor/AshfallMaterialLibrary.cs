@@ -29,6 +29,7 @@ namespace Ashfall.EditorTools
         public static Material EmissiveRed { get; private set; }
         public static Material EmissiveGreen { get; private set; }
         public static Material EnemyFlesh { get; private set; }
+        public static Material ViewmodelSkin { get; private set; }
         public static Material EnemyCorrupt { get; private set; }
         public static Material BruteArmour { get; private set; }
         public static Material GunBody { get; private set; }
@@ -102,6 +103,9 @@ namespace Ashfall.EditorTools
             // Barely-there rim of corruption. Anything stronger and the body reads as
             // emissive too, which erases the contrast against the glowing veins.
             EnableEmission(EnemyFlesh, AshfallPalette.EnemyCorrupt * 0.06f);
+
+            ViewmodelSkin = Make("M_ViewmodelSkin", AshfallPalette.ViewmodelSkin, 0.0f, 0.28f,
+                AshfallTextureFactory.Concrete, AshfallTextureFactory.ConcreteNormal, 0.20f);
 
             EnemyCorrupt = MakeEmissive("M_EnemyCorrupt", AshfallPalette.EnemyCorrupt, 2.4f);
             EnemyCorrupt.SetColor(BaseColorId, AshfallPalette.EnemyCorrupt * 0.35f);

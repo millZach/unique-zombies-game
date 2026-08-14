@@ -1598,8 +1598,8 @@ MonoBehaviour:
   bobVerticalAmplitude: 0.045
   bobHorizontalAmplitude: 0.032
   bobRollDegrees: 0.6
-  hipPosition: {x: 0.21, y: -0.2, z: 0.46}
-  aimPosition: {x: 0, y: -0.075, z: 0.36}
+  hipPosition: {x: 0.21, y: -0.29, z: 0.46}
+  aimPosition: {x: 0, y: -0.18, z: 0.36}
   swayAmount: 0.014
   swaySpeed: 9
   weaponFollowSpeed: 14
